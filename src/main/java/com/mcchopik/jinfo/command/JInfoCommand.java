@@ -59,7 +59,7 @@ public final class JInfoCommand {
                         .then(lit("set").then(arg("text", StringArgumentType.greedyString())
                                 .executes(ctx -> set(ctx.getSource(), api,
                                         StringArgumentType.getString(ctx, "text")))))
-                        .build())
+                )
         );
     }
 
