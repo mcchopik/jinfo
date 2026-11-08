@@ -1,0 +1,30 @@
+# Build outputs
+build/
+.gradle/
+run/
+out/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Environment and secrets
+.env
+*.env
+*.key
+*.pem
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+wrangler-*.log
+
+# Wrangler
+.wrangler/
+
+# Local development
+.local/

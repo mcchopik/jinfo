@@ -1,0 +1,8 @@
+name = "mcprofiles"
+main = "index.js"
+compatibility_date = "2026-11-04"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "profiles"
+database_id = "aa100ded-4722-400e-9d58-455b8484d405"
