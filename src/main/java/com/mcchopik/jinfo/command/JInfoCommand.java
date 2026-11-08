@@ -1,8 +1,5 @@
 package com.mcchopik.jinfo.command;
 
-import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument;
-import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal;
-
 import com.mcchopik.jinfo.net.ApiClient;
 import com.mcchopik.jinfo.net.ApiException;
 import com.mcchopik.jinfo.net.MinecraftSession;
@@ -12,6 +9,8 @@ import com.mcchopik.jinfo.text.Lang;
 import com.mcchopik.jinfo.text.ParsedProfile;
 import com.mcchopik.jinfo.text.TextParser;
 import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import java.util.concurrent.CompletableFuture;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
@@ -30,28 +29,37 @@ public final class JInfoCommand {
     private JInfoCommand() {
     }
 
+    private static LiteralArgumentBuilder<FabricClientCommandSource> lit(String name) {
+        return LiteralArgumentBuilder.<FabricClientCommandSource>literal(name);
+    }
+
+    private static RequiredArgumentBuilder<FabricClientCommandSource, String> arg(
+            String name, StringArgumentType type) {
+        return RequiredArgumentBuilder.<FabricClientCommandSource, String>argument(name, type);
+    }
+
     public static void register(ApiClient api) {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) ->
-                dispatcher.register(literal("jinfo")
+                dispatcher.register(lit("jinfo")
                         .executes(ctx -> help(ctx.getSource()))
-                        .then(literal("help").executes(ctx -> help(ctx.getSource())))
-                        .then(literal("edit").executes(ctx -> {
+                        .then(lit("help").executes(ctx -> help(ctx.getSource())))
+                        .then(lit("edit").executes(ctx -> {
                             reply(ctx.getSource(), "Экран редактора появится на следующем шаге.");
                             return 1;
                         }))
-                        .then(literal("web").executes(ctx -> {
+                        .then(lit("web").executes(ctx -> {
                             reply(ctx.getSource(), "Веб-редактор появится на следующем шаге.");
                             return 1;
                         }))
-                        .then(literal("me").executes(ctx -> me(ctx.getSource(), api)))
-                        .then(literal("clear").executes(ctx -> clear(ctx.getSource(), api)))
-                        .then(literal("view").then(argument("name", StringArgumentType.word())
+                        .then(lit("me").executes(ctx -> me(ctx.getSource(), api)))
+                        .then(lit("clear").executes(ctx -> clear(ctx.getSource(), api)))
+                        .then(lit("view").then(arg("name", StringArgumentType.word())
                                 .executes(ctx -> view(ctx.getSource(), api,
                                         StringArgumentType.getString(ctx, "name")))))
-                        .then(literal("set").then(argument("text", StringArgumentType.greedyString())
+                        .then(lit("set").then(arg("text", StringArgumentType.greedyString())
                                 .executes(ctx -> set(ctx.getSource(), api,
                                         StringArgumentType.getString(ctx, "text")))))
-                )
+                        .build())
         );
     }
 
