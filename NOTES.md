@@ -5,6 +5,9 @@
 - **Шаг 2 (каркас мода + CI)** — готово. Сборка в GitHub Actions зелёная (MC 26.2, Java 25, Loom 1.19).
 - **Шаг 3 (парсер текста)** — готово: классы `com.mcchopik.jinfo.text` (Service, Lang, Style,
   Part, ParsedProfile, LinkValidator, TextParser, HtmlRenderer) + JUnit-тесты.
+- **Шаг 4 (сетевой клиент)** — готово: `com.mcchopik.jinfo.net` (ApiClient, TokenStore,
+  OfflineKeyStore, ProfileCache, MinecraftSession) + тесты. Online-авторизация берёт токен
+  сессии через рефлексию (best-effort); если недоступно — используется offline Ed25519.
 
 ## Принятые решения
 - Версии взяты из рабочего шаблона (noverplay-26.2): Minecraft `26.2`, Fabric Loader `0.20.1`,
