@@ -3,7 +3,7 @@
   "id": "jinfo",
   "version": "${version}",
   "name": "JInfo",
-  "description": "Player profiles stored in Cloudflare Worker + D1. Works with both online and offline accounts.",
+  "description": "Player profiles stored in a Cloudflare Worker + D1. Works with both online and offline accounts.",
   "authors": ["mcchopik"],
   "contact": {
     "homepage": "https://github.com/mcchopik/jinfo",
@@ -11,7 +11,6 @@
     "issues": "https://github.com/mcchopik/jinfo/issues"
   },
   "license": "MIT",
-  "icon": "assets/jinfo/icon.png",
   "environment": "client",
   "entrypoints": {
     "client": [
@@ -21,20 +20,10 @@
       "com.mcchopik.jinfo.JInfoMod"
     ]
   },
-  "mixins": [
-    "jinfo.mixins.json"
-  ],
   "depends": {
-    "fabricloader": ">=0.16.9",
-    "minecraft": "~1.21.4",
-    "java": ">=21",
+    "fabricloader": ">=0.20.1",
+    "minecraft": "~26.2",
+    "java": ">=25",
     "fabric-api": "*"
-  },
-  "custom": {
-    "modmenu": {
-      "links": {
-        "github": "https://github.com/mcchopik/jinfo"
-      }
-    }
   }
 }

@@ -28,3 +28,8 @@ wrangler-*.log
 
 # Local development
 .local/
+
+# Local-only files (not part of the project)
+promp.txt
+opencode.json
+NOTES.local.md
