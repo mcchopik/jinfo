@@ -6,13 +6,13 @@ import java.util.UUID;
 
 /**
  * Best-effort доступ к текущей сессии Minecraft через рефлексию.
- * Так мы не завязываемся на конкретные имена API (которые могут отличаться
- * между версиями) и не выдумываем методы. Если что-то не найдено — вернём пусто,
+ * Так мы не завязываемся на конкретные имена API (они отличаются между версиями)
+ * и не выдумываем методы. Если что-то не найдено — возвращаем пусто,
  * и мод использует offline-авторизацию.
  */
 public final class MinecraftSession {
 
-    public record SessionInfo(String accessToken, String uuid) {
+    public record SessionInfo(String accessToken, String uuid, String username) {
     }
 
     private MinecraftSession() {
@@ -20,8 +20,7 @@ public final class MinecraftSession {
 
     public static Optional<SessionInfo> current() {
         try {
-            Class<?> clientClass = Class.forName("net.minecraft.client.MinecraftClient");
-            Object client = clientClass.getMethod("getInstance").invoke(null);
+            Object client = clientInstance();
             if (client == null) {
                 return Optional.empty();
             }
@@ -30,8 +29,11 @@ public final class MinecraftSession {
                 return Optional.empty();
             }
             String accessToken = asString(invoke(session, "getAccessToken"));
-            Object uuidObj = invoke(session, "getUuidOrNull");
-            String uuid = uuidObj == null ? null : uuidObj.toString();
+            String username = asString(invoke(session, "getUsername"));
+            String uuid = asString(invoke(session, "getUuidOrNull"));
+            if (uuid == null) {
+                uuid = asString(invoke(session, "getProfileId"));
+            }
             if (uuid == null) {
                 uuid = asString(invoke(session, "getUuid"));
             }
@@ -41,9 +43,43 @@ public final class MinecraftSession {
             if (accessToken == null || accessToken.isEmpty() || uuid == null || uuid.isEmpty()) {
                 return Optional.empty();
             }
-            return Optional.of(new SessionInfo(accessToken, uuid));
+            return Optional.of(new SessionInfo(accessToken, uuid, username));
         } catch (Throwable t) {
             return Optional.empty();
+        }
+    }
+
+    /**
+     * Отдельно достаёт только ник (нужен даже без токена, например в offline).
+     */
+    public static Optional<String> currentUsername() {
+        Optional<SessionInfo> s = current();
+        if (s.isPresent() && s.get().username() != null && !s.get().username().isEmpty()) {
+            return Optional.of(s.get().username());
+        }
+        // Попробуем достать ник напрямую из сессии, даже если токен недоступен.
+        try {
+            Object client = clientInstance();
+            if (client == null) {
+                return Optional.empty();
+            }
+            Object session = invoke(client, "getSession");
+            if (session == null) {
+                return Optional.empty();
+            }
+            String username = asString(invoke(session, "getUsername"));
+            return username == null || username.isEmpty() ? Optional.empty() : Optional.of(username);
+        } catch (Throwable t) {
+            return Optional.empty();
+        }
+    }
+
+    public static Object clientInstance() {
+        try {
+            Class<?> clientClass = Class.forName("net.minecraft.client.Minecraft");
+            return clientClass.getMethod("getInstance").invoke(null);
+        } catch (Throwable t) {
+            return null;
         }
     }
 
