@@ -149,8 +149,11 @@ class TextParserTest {
 
     @Test
     void tooLongFlagged() {
-        String longText = "a".repeat(501);
-        ParsedProfile p = parser.parse(longText, Lang.RU);
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 501; i++) {
+            sb.append((char) ('a' + (i % 26)));
+        }
+        ParsedProfile p = parser.parse(sb.toString(), Lang.RU);
         assertTrue(p.overLimits());
         assertTrue(p.warnings().contains("too_long"));
     }
