@@ -1,6 +1,10 @@
 # JInfo — статус и заметки
 
 ## Краткий итог (сверху)
+- **Версия и апдейты** — `mod_version=0.1beta`; workflow по тегу `v*` собирает эту версию,
+  создаёт GitHub Release с jar и `update.json` (version/file/sha256). В моде: проверка
+  последнего релиза при входе (чат) и `/jinfo update`; сравнение версий, без автоустановки.
+  Релиз-ноты: `.github/release-notes/<версия>.md`. Тег не создавался (нужно разрешение).
 - **Шаг 1 (Worker)** — готово, задеплоено на `mcprofiles.mcchopik.workers.dev`. Проверка: `GET /profile/test` без токена → 401.
 - **Шаг 2 (каркас мода + CI)** — готово. Сборка в GitHub Actions зелёная (MC 26.2, Java 25, Loom 1.19).
 - **Шаг 3 (парсер текста)** — готово: классы `com.mcchopik.jinfo.text` (Service, Lang, Style,
