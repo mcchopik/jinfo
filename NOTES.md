@@ -15,6 +15,11 @@
 - **Шаг 6 (экран редактора)** — готово: `JInfoEditorScreen` (стек EditBox = многострочность,
   счётчик, предпросмотр, цвета/стили/сервисы/hex, сохранить/очистить/отмена). GUI-API 26.2:
   `extractRenderState(GuiGraphicsExtractor,…)`, `graphics.text/fill`. Открывается `/jinfo edit`.
+- **Шаг 7 (веб-редактор)** — готово: `com.mcchopik.jinfo.web.WebServer` (JDK HttpServer,
+  127.0.0.1, порт 0, токен в пути, проверка Host/Origin, CSP+nosniff). Ресурсы:
+  `assets/jinfo/web/{editor.html,app.css,app.js}`. `/jinfo web` открывает браузер,
+  `/jinfo web stop` останавливает; авто-стоп через 30 мин простоя, при выходе из мира/игры.
+  Предпросмотр и сохранение идут через Java-парсер; секреты странице не отдаются.
 
 ## Принятые решения
 - Версии взяты из рабочего шаблона (noverplay-26.2): Minecraft `26.2`, Fabric Loader `0.20.1`,

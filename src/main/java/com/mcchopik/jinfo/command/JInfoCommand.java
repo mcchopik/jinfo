@@ -9,15 +9,18 @@ import com.mcchopik.jinfo.screen.JInfoEditorScreen;
 import com.mcchopik.jinfo.text.Lang;
 import com.mcchopik.jinfo.text.ParsedProfile;
 import com.mcchopik.jinfo.text.TextParser;
+import com.mcchopik.jinfo.web.WebServer;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
+import java.net.URI;
 import java.util.concurrent.CompletableFuture;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.Util;
 
 /**
  * Клиентская команда /jinfo со всеми подкомандами и справкой.
@@ -53,10 +56,9 @@ public final class JInfoCommand {
                             });
                             return 1;
                         }))
-                        .then(lit("web").executes(ctx -> {
-                            reply(ctx.getSource(), "Веб-редактор появится на следующем шаге.");
-                            return 1;
-                        }))
+                        .then(lit("web")
+                                .executes(ctx -> webStart(ctx.getSource(), api))
+                                .then(lit("stop").executes(ctx -> webStop(ctx.getSource()))))
                         .then(lit("me").executes(ctx -> me(ctx.getSource(), api)))
                         .then(lit("clear").executes(ctx -> clear(ctx.getSource(), api)))
                         .then(lit("view").then(arg("name", StringArgumentType.word())
@@ -200,6 +202,38 @@ public final class JInfoCommand {
                 reply(src, "Ошибка: " + e.getMessage());
             }
         });
+        return 1;
+    }
+
+    private static int webStart(FabricClientCommandSource src, ApiClient api) {
+        String name = selfName();
+        if (name == null) {
+            reply(src, "Не удалось определить ник игрока.");
+            return 0;
+        }
+        Minecraft client = src.getClient();
+        CompletableFuture.runAsync(() -> {
+            try {
+                String url = WebServer.start(api, name);
+                client.execute(() -> {
+                    try {
+                        Util.getPlatform().openUri(URI.create(url));
+                    } catch (Throwable ignored) {
+                        // браузер не открылся — покажем ссылку в чате
+                    }
+                });
+                reply(src, "Веб-редактор: " + url);
+                reply(src, "Остановить: /jinfo web stop");
+            } catch (Exception e) {
+                reply(src, "Не удалось запустить веб-сервер: " + e.getMessage());
+            }
+        });
+        return 1;
+    }
+
+    private static int webStop(FabricClientCommandSource src) {
+        WebServer.stop("command");
+        reply(src, "Веб-сервер остановлен.");
         return 1;
     }
 

@@ -1,0 +1,179 @@
+:root {
+  --bg: #0f1216;
+  --panel: #171b21;
+  --panel2: #1e242b;
+  --text: #e6e8ec;
+  --muted: #9aa3ae;
+  --accent: #4fc3f7;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  font-size: 14px;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: var(--panel);
+  border-bottom: 1px solid #2a313a;
+}
+
+header h1 { font-size: 16px; margin: 0; }
+
+.session { color: var(--muted); font-size: 12px; }
+.session.ok { color: #55ff55; }
+.session.dead { color: #ff5555; }
+
+main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px;
+  padding: 12px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+@media (max-width: 720px) {
+  main { grid-template-columns: 1fr; }
+}
+
+.editor, .preview {
+  background: var(--panel);
+  border: 1px solid #2a313a;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+textarea {
+  width: 100%;
+  min-height: 180px;
+  resize: vertical;
+  background: var(--panel2);
+  color: var(--text);
+  border: 1px solid #313a44;
+  border-radius: 6px;
+  padding: 8px;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+textarea:focus { outline: 1px solid var(--accent); }
+
+.counter {
+  display: flex;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: 12px;
+  margin: 6px 0;
+}
+.counter .bad { color: #ff5555; }
+
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+.group { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
+
+button {
+  background: #232b34;
+  color: var(--text);
+  border: 1px solid #313a44;
+  border-radius: 5px;
+  padding: 5px 9px;
+  cursor: pointer;
+  font-size: 12px;
+}
+button:hover { border-color: var(--accent); }
+button.primary { background: #2560a8; border-color: #2f74c9; }
+button.primary:hover { background: #2f74c9; }
+
+.colbtn {
+  width: 24px;
+  height: 22px;
+  border-radius: 4px;
+  border: 1px solid #000;
+  padding: 0;
+}
+
+.services button { font-size: 11px; }
+
+.hexrow { display: flex; gap: 6px; align-items: center; margin-bottom: 10px; }
+.hexrow input {
+  width: 100px;
+  background: var(--panel2);
+  color: var(--text);
+  border: 1px solid #313a44;
+  border-radius: 5px;
+  padding: 5px 7px;
+}
+
+.actions { display: flex; gap: 8px; }
+
+.status { margin-top: 8px; font-size: 12px; color: var(--muted); min-height: 16px; }
+.status.ok { color: #55ff55; }
+.status.err { color: #ff5555; }
+.status.warn { color: #ffaa00; }
+
+.tabs { display: flex; gap: 6px; margin-bottom: 8px; }
+.tab.active { background: #2560a8; border-color: #2f74c9; }
+
+.pane {
+  display: none;
+  min-height: 160px;
+  background: var(--panel2);
+  border: 1px solid #313a44;
+  border-radius: 6px;
+  padding: 10px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.5;
+}
+.pane.active { display: block; }
+
+.warnings { margin-top: 8px; font-size: 12px; color: #ffaa00; min-height: 16px; }
+
+/* Цвета Minecraft */
+.mc0 { background: #000000; } .mc1 { background: #0000aa; }
+.mc2 { background: #00aa00; } .mc3 { background: #00aaaa; }
+.mc4 { background: #aa0000; } .mc5 { background: #aa00aa; }
+.mc6 { background: #ffaa00; } .mc7 { background: #aaaaaa; }
+.mc8 { background: #555555; } .mc9 { background: #5555ff; }
+.mca { background: #55ff55; } .mcb { background: #55ffff; }
+.mcc { background: #ff5555; } .mcd { background: #ff55ff; }
+.mce { background: #ffff55; } .mcf { background: #ffffff; }
+
+/* Классы сервисов из HtmlRenderer */
+.svc {
+  display: inline-block;
+  padding: 1px 6px;
+  margin: 1px 0;
+  border-radius: 4px;
+  border: 1px solid #3a434d;
+  background: #222a33;
+  color: #fff;
+}
+.svc.warn { outline: 1px solid #ffaa00; }
+.raw { color: #8a929c; }
+
+.svc-youtube { color: #ff0000; border-color: #ff0000; }
+.svc-twitch { color: #9146ff; border-color: #9146ff; }
+.svc-discord { color: #5865f2; border-color: #5865f2; }
+.svc-telegram { color: #229ed9; border-color: #229ed9; }
+.svc-tiktok { color: #fe2c55; border-color: #fe2c55; }
+.svc-instagram { color: #e1306c; border-color: #e1306c; }
+.svc-x { color: #ffffff; border-color: #ffffff; }
+.svc-github { color: #6e5494; border-color: #6e5494; }
+.svc-steam { color: #66c0f4; border-color: #66c0f4; }
+.svc-vk { color: #0077ff; border-color: #0077ff; }
+.svc-reddit { color: #ff4500; border-color: #ff4500; }
+.svc-kick { color: #53fc18; border-color: #53fc18; }
+.svc-boosty { color: #f15f2c; border-color: #f15f2c; }
+.svc-donationalerts { color: #ff6b00; border-color: #ff6b00; }
+.svc-modrinth { color: #1bd96a; border-color: #1bd96a; }
+.svc-link { color: #4fc3f7; border-color: #4fc3f7; }
