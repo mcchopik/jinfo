@@ -177,7 +177,14 @@ public final class TextParser {
             if (!res.valid()) {
                 return new PlaceholderResult(null, text.substring(i, p), null, p);
             }
-            return new PlaceholderResult(null, null, arg, p);
+            int end = p;
+            while (end < text.length() && (text.charAt(end) == ' ' || text.charAt(end) == '\t')) {
+                end++;
+            }
+            if (end < text.length() && text.charAt(end) == '\n') {
+                end++;
+            }
+            return new PlaceholderResult(null, null, arg, end);
         }
 
         if (universal) {
