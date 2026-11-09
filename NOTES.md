@@ -1,6 +1,11 @@
 # JInfo — статус и заметки
 
 ## Краткий итог (сверху)
+- **Своё фото** — `{avatar} https://...` (и `{photo}`) в тексте профиля; парсер
+  складывает ссылку в `ParsedProfile.avatarUrl()`, игра скачивает картинку
+  (`PhotoTextures`, NativeImage + DynamicTexture, центр-кроп) и рисует вместо
+  головы в карточке/профиле; веб-редактор показывает `<img>` (CSP img-src https:),
+  кнопка «Фото» в редакторе и `/jinfo photo <url>` / `photo off` в командах.
 - **Шаблоны/предпросмотр/Mod Menu** — `ProfileTemplates` (streamer/developer/gamer/simple,
   ru/uk/en), `/jinfo template <id>`, `/jinfo preview [ник]` (открывает полный экран),
   кнопка «Шаблоны» в редакторе (`JInfoTemplateScreen`), локализация редактора и `/jinfo help`
