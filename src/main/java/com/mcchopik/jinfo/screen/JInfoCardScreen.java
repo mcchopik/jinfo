@@ -63,12 +63,20 @@ public class JInfoCardScreen extends Screen {
 
         int bw = 80;
         int by = panelY + PANEL_H - 26;
-        addRenderableWidget(Button.builder(Component.literal("Открыть профиль"), b ->
-                        setStatus("Полный экран появится на следующем шаге.", 0xFFFFAA00))
+        addRenderableWidget(new PaintedButton(headX, headY, HEAD, HEAD,
+                Component.literal("Открыть профиль"), (g, b, hovered) -> {
+                }, this::openProfile));
+        addRenderableWidget(Button.builder(Component.literal("Открыть профиль"), b -> openProfile())
                 .bounds(panelX + (PANEL_W - bw) / 2, by, bw, 18)
                 .build());
 
         loadProfile();
+    }
+
+    private void openProfile() {
+        if (minecraft != null) {
+            minecraft.gui.setScreen(new JInfoProfileScreen(api, uuid, playerName, skinSource, parent));
+        }
     }
 
     private void loadProfile() {
