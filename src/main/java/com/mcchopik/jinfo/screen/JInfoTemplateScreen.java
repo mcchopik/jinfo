@@ -52,9 +52,6 @@ public class JInfoTemplateScreen extends Screen {
 
     private void pick(ProfileTemplates template) {
         editor.applyTemplate(template.text(JInfoConfig.language()));
-        if (minecraft != null) {
-            minecraft.gui.setScreen(editor);
-        }
     }
 
     @Override
