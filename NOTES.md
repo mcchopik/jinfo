@@ -20,6 +20,9 @@
   `assets/jinfo/web/{editor.html,app.css,app.js}`. `/jinfo web` открывает браузер,
   `/jinfo web stop` останавливает; авто-стоп через 30 мин простоя, при выходе из мира/игры.
   Предпросмотр и сохранение идут через Java-парсер; секреты странице не отдаются.
+- **Шаг 8 (Shift+ПКМ, карточка)** — готово: `UseEntityCallback` + `JInfoCardScreen`
+  (голова из скина best-effort через рефлексию, иконка статуса, подсказка при наведении).
+  Галка выключения жеста — `JInfoConfig` (config/jinfo/config.json).
 
 ## Принятые решения
 - Версии взяты из рабочего шаблона (noverplay-26.2): Minecraft `26.2`, Fabric Loader `0.20.1`,
