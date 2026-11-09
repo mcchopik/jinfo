@@ -1,6 +1,6 @@
 # JInfo
 
-Клиентский Fabric-мод для Minecraft **26.2**: короткий профиль игрока (до 500 символов,
+Клиентский Fabric-мод для Minecraft **26.2** с откритим исходним кодом: этот мод делает короткий профиль игрока (до 500 символов,
 10 строк, 6 ссылок), который виден и лицензиям,и пиратке.
 ## Возможности
 
@@ -81,20 +81,6 @@
 ```
 
 Jar появится в `build/libs/`. CI использует Java 25 (Microsoft build) и Gradle wrapper 9.8.2.
-
-## Бэкенд (Worker + D1)
-
-Код Worker — в `worker/` (`index.js`, `schema.sql`, `wrangler.toml`). Секреты
-`TOKEN_KEY` и `AES_KEY` живут только в Cloudflare и в репозиторий не попадают.
-Деплой:
-
-```bash
-cd worker
-wrangler deploy --name mcprofiles --compatibility-date 2026-11-04
-```
-
-Применение схемы: выполните `worker/schema.sql` для базы D1 (таблицы `profiles`,
-`offline_keys`, `reports`).
 
 ## Приватность
 
