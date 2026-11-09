@@ -175,3 +175,16 @@ button.primary:hover { background: #2f74c9; }
 .svc-donationalerts { color: #ff6b00; border-color: #ff6b00; }
 .svc-modrinth { color: #1bd96a; border-color: #1bd96a; }
 .svc-link { color: #4fc3f7; border-color: #4fc3f7; }
+
+
+.avatar {
+  margin: 0 0 8px;
+  text-align: center;
+}
+.avatar img {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #3a434d;
+}

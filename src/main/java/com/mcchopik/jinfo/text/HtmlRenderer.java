@@ -16,6 +16,11 @@ public final class HtmlRenderer {
 
     public static String render(ParsedProfile profile, Mode mode) {
         StringBuilder sb = new StringBuilder();
+        if (mode == Mode.FULL && profile.avatarUrl() != null) {
+            sb.append("<div class=\"avatar\"><img src=\"")
+                    .append(escapeAttr(profile.avatarUrl()))
+                    .append("\" alt=\"\"></div>");
+        }
         for (Part part : profile.parts()) {
             renderPart(sb, part, mode);
         }

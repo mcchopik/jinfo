@@ -47,6 +47,14 @@ public final class Messages {
         put("back", "Назад", "Назад", "Back");
 
         put("templates", "Шаблоны", "Шаблони", "Templates");
+        put("photo", "Фото", "Фото", "Photo");
+        put("photo_invalid", "Нужна прямая https-ссылка на картинку.",
+                "Потрібне пряме https-посилання на картинку.",
+                "A direct https image link is required.");
+        put("photo_set", "Фото профиля обновлено.", "Фото профілю оновлено.",
+                "Profile photo updated.");
+        put("photo_removed", "Фото профиля убрано.", "Фото профілю прибрано.",
+                "Profile photo removed.");
         put("template_hint", "Выбери шаблон — он заменит текст редактора.",
                 "Обери шаблон — він замінить текст редактора.",
                 "Pick a template — it will replace the editor text.");
@@ -100,6 +108,7 @@ public final class Messages {
                         + "/jinfo edit — редактор в игре\n"
                         + "/jinfo web — редактор в браузере\n"
                         + "/jinfo template <id> — готовый шаблон\n"
+                        + "/jinfo photo <url> — фото профиля (прямая ссылка)\n"
                         + "/jinfo preview [ник] — как выглядит профиль\n"
                         + "/jinfo set <текст> — быстро задать текст\n"
                         + "/jinfo me — мой профиль\n"
@@ -111,6 +120,7 @@ public final class Messages {
                         + "{youtube}, {twitch}, {discord}, {telegram}, {tiktok}, {instagram}, {x}, {github}, {steam}, {vk}, {reddit}, {kick}, {boosty}, {donationalerts}, {modrinth}\n"
                         + "После плейсхолдера — @ник или ссылка. Пример: {youtube} @nick\n"
                         + "Универсально: {link:Название} https://example.com\n"
+                        + "Фото: {avatar} https://example.com/photo.png\n"
                         + "Цвета: &0-&f, &l &o &n &m &r, hex &#RRGGBB; &k запрещён.\n"
                         + "Лимиты: 500 символов, 10 строк, 6 ссылок.",
                 "=== JInfo — профіль гравця ===\n"
@@ -118,6 +128,7 @@ public final class Messages {
                         + "/jinfo edit — редактор у грі\n"
                         + "/jinfo web — редактор у браузері\n"
                         + "/jinfo template <id> — готовий шаблон\n"
+                        + "/jinfo photo <url> — фото профілю (пряме посилання)\n"
                         + "/jinfo preview [нік] — як виглядає профіль\n"
                         + "/jinfo set <текст> — швидко задати текст\n"
                         + "/jinfo me — мій профіль\n"
@@ -129,6 +140,7 @@ public final class Messages {
                         + "{youtube}, {twitch}, {discord}, {telegram}, {tiktok}, {instagram}, {x}, {github}, {steam}, {vk}, {reddit}, {kick}, {boosty}, {donationalerts}, {modrinth}\n"
                         + "Після плейсхолдера — @нік або посилання. Приклад: {youtube} @nick\n"
                         + "Універсально: {link:Назва} https://example.com\n"
+                        + "Фото: {avatar} https://example.com/photo.png\n"
                         + "Кольори: &0-&f, &l &o &n &m &r, hex &#RRGGBB; &k заборонено.\n"
                         + "Ліміти: 500 символів, 10 рядків, 6 посилань.",
                 "=== JInfo — player profile ===\n"
@@ -136,6 +148,7 @@ public final class Messages {
                         + "/jinfo edit — in-game editor\n"
                         + "/jinfo web — browser editor\n"
                         + "/jinfo template <id> — ready-made template\n"
+                        + "/jinfo photo <url> — profile photo (direct link)\n"
                         + "/jinfo preview [nick] — how the profile looks\n"
                         + "/jinfo set <text> — set the text quickly\n"
                         + "/jinfo me — my profile\n"
@@ -147,6 +160,7 @@ public final class Messages {
                         + "{youtube}, {twitch}, {discord}, {telegram}, {tiktok}, {instagram}, {x}, {github}, {steam}, {vk}, {reddit}, {kick}, {boosty}, {donationalerts}, {modrinth}\n"
                         + "After a placeholder put @nick or a link. Example: {youtube} @nick\n"
                         + "Generic: {link:Title} https://example.com\n"
+                        + "Photo: {avatar} https://example.com/photo.png\n"
                         + "Colours: &0-&f, &l &o &n &m &r, hex &#RRGGBB; &k is not allowed.\n"
                         + "Limits: 500 characters, 10 lines, 6 links.");
     }

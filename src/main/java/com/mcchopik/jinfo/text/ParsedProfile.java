@@ -9,7 +9,8 @@ public record ParsedProfile(
         int charCount,
         int lineCount,
         String plainText,
-        boolean overLimits) {
+        boolean overLimits,
+        String avatarUrl) {
 
     public static final int MAX_CHARS = 500;
     public static final int MAX_LINES = 10;

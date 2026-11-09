@@ -2,6 +2,7 @@ package com.mcchopik.jinfo.text;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
@@ -190,5 +191,19 @@ class TextParserTest {
             }
         }
         throw new AssertionError("no link found in: " + p.plainText());
+    }
+
+    @Test
+    void avatarPlaceholderExtracted() {
+        ParsedProfile p = parser.parse("{avatar} https://example.com/photo.png\nПривет", Lang.RU);
+        assertEquals("https://example.com/photo.png", p.avatarUrl());
+        assertEquals("Привет", p.plainText());
+    }
+
+    @Test
+    void invalidAvatarStaysVisible() {
+        ParsedProfile p = parser.parse("{avatar} http://example.com/photo.png", Lang.RU);
+        assertNull(p.avatarUrl());
+        assertTrue(p.plainText().contains("{avatar}"));
     }
 }

@@ -21,6 +21,7 @@ public final class TextParser {
         StringBuilder buffer = new StringBuilder();
         Style style = Style.DEFAULT;
         int linkCount = 0;
+        String avatarUrl = null;
         int i = 0;
         int len = text.length();
 
@@ -44,6 +45,10 @@ public final class TextParser {
                     if (ph.validLink != null) {
                         parts.add(ph.validLink);
                         linkCount++;
+                    } else if (ph.avatarUrl != null) {
+                        if (avatarUrl == null) {
+                            avatarUrl = ph.avatarUrl;
+                        }
                     } else if (ph.literal != null) {
                         parts.add(new Part.Raw(ph.literal));
                     }
@@ -79,7 +84,7 @@ public final class TextParser {
         }
 
         return new ParsedProfile(List.copyOf(parts), List.copyOf(warnings),
-                linkCount, text.length(), lineCount, plain, overLimits);
+                linkCount, text.length(), lineCount, plain, overLimits, avatarUrl);
     }
 
     private record FormatResult(int consumed, Style style) {
@@ -125,7 +130,7 @@ public final class TextParser {
         }
     }
 
-    private record PlaceholderResult(Part.Link validLink, String literal, int nextIndex) {
+    private record PlaceholderResult(Part.Link validLink, String literal, String avatarUrl, int nextIndex) {
     }
 
     private PlaceholderResult tryParsePlaceholder(String text, int i, Lang lang) {
@@ -142,9 +147,11 @@ public final class TextParser {
             return null;
         }
 
-        boolean universal = content.toLowerCase().startsWith("link:");
-        Service service = universal ? null : Service.byKey(content);
-        if (!universal && service == null) {
+        String lower = content.toLowerCase();
+        boolean universal = lower.startsWith("link:");
+        boolean avatar = lower.equals("avatar") || lower.equals("photo");
+        Service service = universal || avatar ? null : Service.byKey(content);
+        if (!universal && !avatar && service == null) {
             return null;
         }
 
@@ -159,8 +166,18 @@ public final class TextParser {
         }
         String arg = text.substring(tokenStart, p);
         if (arg.isEmpty()) {
+            return new PlaceholderResult(null, text.substring(i, close + 1), null, close + 1);
+        }
 
-            return new PlaceholderResult(null, text.substring(i, close + 1), close + 1);
+        if (avatar) {
+            if (!arg.toLowerCase().startsWith("https://")) {
+                return new PlaceholderResult(null, text.substring(i, p), null, p);
+            }
+            LinkValidator.Result res = LinkValidator.validateGeneric(arg);
+            if (!res.valid()) {
+                return new PlaceholderResult(null, text.substring(i, p), null, p);
+            }
+            return new PlaceholderResult(null, null, arg, p);
         }
 
         if (universal) {
@@ -169,14 +186,14 @@ public final class TextParser {
                 title = "Link";
             }
             if (!arg.toLowerCase().startsWith("https://")) {
-                return new PlaceholderResult(null, text.substring(i, p), p);
+                return new PlaceholderResult(null, text.substring(i, p), null, p);
             }
             LinkValidator.Result res = LinkValidator.validateGeneric(arg);
             if (!res.valid()) {
-                return new PlaceholderResult(null, text.substring(i, p), p);
+                return new PlaceholderResult(null, text.substring(i, p), null, p);
             }
             Part.Link link = new Part.Link("link", title, "#4FC3F7", arg, arg, false, res.warnings());
-            return new PlaceholderResult(link, null, p);
+            return new PlaceholderResult(link, null, null, p);
         }
 
         String url;
@@ -185,20 +202,20 @@ public final class TextParser {
         } else {
             String handle = arg.startsWith("@") ? arg.substring(1) : arg;
             if (!handle.matches("[A-Za-z0-9._-]{1,64}")) {
-                return new PlaceholderResult(null, text.substring(i, p), p);
+                return new PlaceholderResult(null, text.substring(i, p), null, p);
             }
             if (handle.isEmpty()) {
-                return new PlaceholderResult(null, text.substring(i, p), p);
+                return new PlaceholderResult(null, text.substring(i, p), null, p);
             }
             url = service.buildUrl(handle);
         }
         LinkValidator.Result res = LinkValidator.validateService(url, service);
         if (!res.valid()) {
-            return new PlaceholderResult(null, text.substring(i, p), p);
+            return new PlaceholderResult(null, text.substring(i, p), null, p);
         }
         Part.Link link = new Part.Link(service.key(), service.label(lang), service.colorHex(),
                 url, arg, true, List.of());
-        return new PlaceholderResult(link, null, p);
+        return new PlaceholderResult(link, null, null, p);
     }
 
     private static void flush(StringBuilder buffer, Style style, List<Part> parts) {

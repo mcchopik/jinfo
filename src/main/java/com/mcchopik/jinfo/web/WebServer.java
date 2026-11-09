@@ -319,7 +319,7 @@ public final class WebServer {
     private void send(HttpExchange ex, int status, String contentType, byte[] body) throws IOException {
         Headers h = ex.getResponseHeaders();
         h.set("Content-Security-Policy",
-                "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; "
+                "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https:; "
                 + "connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'");
         h.set("X-Content-Type-Options", "nosniff");
         h.set("Cache-Control", "no-store");

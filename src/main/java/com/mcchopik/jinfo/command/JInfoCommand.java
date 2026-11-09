@@ -14,12 +14,16 @@ import com.mcchopik.jinfo.screen.JInfoSettingsScreen;
 import com.mcchopik.jinfo.text.Messages;
 import com.mcchopik.jinfo.text.ParsedProfile;
 import com.mcchopik.jinfo.text.ProfileTemplates;
+import com.mcchopik.jinfo.text.LinkValidator;
 import com.mcchopik.jinfo.text.TextParser;
 import com.mcchopik.jinfo.web.WebServer;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
@@ -75,6 +79,10 @@ public final class JInfoCommand {
                                 .then(arg("id", StringArgumentType.word())
                                         .executes(ctx -> applyTemplate(ctx.getSource(), api,
                                                 StringArgumentType.getString(ctx, "id")))))
+                        .then(lit("photo")
+                                .then(arg("url", StringArgumentType.greedyString())
+                                        .executes(ctx -> photo(ctx.getSource(), api,
+                                                StringArgumentType.getString(ctx, "url")))))
                         .then(lit("preview")
                                 .executes(ctx -> previewSelf(ctx.getSource(), api))
                                 .then(arg("name", StringArgumentType.word())
@@ -128,6 +136,89 @@ public final class JInfoCommand {
                 }
                 api.putProfile(text);
                 reply(src, Messages.s("template_applied"));
+            } catch (ApiException e) {
+                reply(src, describe(e));
+            } catch (Exception e) {
+                reply(src, Messages.s("editor_error") + e.getMessage());
+            }
+        });
+        return 1;
+    }
+
+    private static int photo(FabricClientCommandSource src, ApiClient api, String raw) {
+        String name = selfName();
+        if (name == null) {
+            reply(src, Messages.s("editor_nick_unknown"));
+            return 0;
+        }
+        String url = raw == null ? "" : raw.trim();
+        boolean remove = url.isEmpty()
+                || url.equalsIgnoreCase("off")
+                || url.equalsIgnoreCase("none")
+                || url.equalsIgnoreCase("remove")
+                || url.equals("-");
+        if (!remove) {
+            if (!url.toLowerCase(Locale.ROOT).startsWith("https://")
+                    || !LinkValidator.validateGeneric(url).valid()) {
+                reply(src, Messages.s("photo_invalid"));
+                return 0;
+            }
+        }
+        reply(src, Messages.s("editor_saving"));
+        CompletableFuture.runAsync(() -> {
+            try {
+                if (!api.isLoggedIn()) {
+                    api.login(name);
+                }
+                String uuid = api.currentUuid();
+                if (uuid == null) {
+                    reply(src, Messages.s("editor_error") + "no uuid");
+                    return;
+                }
+                String current = "";
+                try {
+                    current = api.getProfile(uuid).data();
+                } catch (ApiException e) {
+                    if (e.statusCode() != 404) {
+                        throw e;
+                    }
+                }
+                List<String> lines = new ArrayList<>();
+                for (String line : current.split("\n", -1)) {
+                    String trimmed = line.trim().toLowerCase(Locale.ROOT);
+                    if (trimmed.startsWith("{avatar}") || trimmed.startsWith("{photo}")) {
+                        continue;
+                    }
+                    lines.add(line);
+                }
+                while (!lines.isEmpty() && lines.get(0).isBlank()) {
+                    lines.remove(0);
+                }
+                while (!lines.isEmpty() && lines.get(lines.size() - 1).isBlank()) {
+                    lines.remove(lines.size() - 1);
+                }
+                if (!remove) {
+                    lines.add(0, "{avatar} " + url);
+                }
+                String text = String.join("\n", lines);
+                if (text.isBlank()) {
+                    try {
+                        api.deleteProfile();
+                    } catch (ApiException e) {
+                        if (e.statusCode() != 404) {
+                            throw e;
+                        }
+                    }
+                    reply(src, Messages.s("photo_removed"));
+                    return;
+                }
+                ParsedProfile parsed = PARSER.parse(text, JInfoConfig.language());
+                if (parsed.overLimits()) {
+                    reply(src, Messages.s("editor_over_limits"));
+                    return;
+                }
+                api.putProfile(text);
+                reply(src, remove ? Messages.s("photo_removed") : Messages.s("photo_set"));
             } catch (ApiException e) {
                 reply(src, describe(e));
             } catch (Exception e) {

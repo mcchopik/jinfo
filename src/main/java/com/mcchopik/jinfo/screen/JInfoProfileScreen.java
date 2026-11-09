@@ -4,6 +4,7 @@ import com.mcchopik.jinfo.net.ApiClient;
 import com.mcchopik.jinfo.net.ApiException;
 import com.mcchopik.jinfo.net.ProfileData;
 import com.mcchopik.jinfo.net.MinecraftSession;
+import com.mcchopik.jinfo.net.PhotoTextures;
 import com.mcchopik.jinfo.net.SkinHelper;
 import com.mcchopik.jinfo.text.Lang;
 import com.mcchopik.jinfo.text.Messages;
@@ -32,6 +33,7 @@ public class JInfoProfileScreen extends Screen {
     private final TextParser parser = new TextParser();
 
     private Identifier skin;
+    private PhotoTextures.Photo photo;
     private ParsedProfile parsed;
     private String statusText = Messages.s("loading");
     private int statusColor = 0xFFAAAAAA;
@@ -156,6 +158,7 @@ public class JInfoProfileScreen extends Screen {
                 ParsedProfile p = parser.parse(data.data(), Lang.RU);
                 onClient(() -> {
                     parsed = p;
+                    photo = PhotoTextures.get(p.avatarUrl());
                     loading = false;
                     verified = data.verified();
                     statusText = verified ? Messages.s("verified") : Messages.s("unverified");
@@ -272,6 +275,14 @@ public class JInfoProfileScreen extends Screen {
     }
 
     private void drawHead(GuiGraphicsExtractor graphics) {
+        if (photo == null && parsed != null) {
+            photo = PhotoTextures.get(parsed.avatarUrl());
+        }
+        if (photo != null) {
+            graphics.blit(photo.id(), headX, headY, headX + HEAD, headY + HEAD,
+                    photo.u0(), photo.u1(), photo.v0(), photo.v1());
+            return;
+        }
         if (skin != null) {
             float u0 = 8f / 64f;
             float u1 = 16f / 64f;
