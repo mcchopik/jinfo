@@ -1,6 +1,11 @@
 # JInfo — статус и заметки
 
 ## Краткий итог (сверху)
+- **Шаблоны/предпросмотр/Mod Menu** — `ProfileTemplates` (streamer/developer/gamer/simple,
+  ru/uk/en), `/jinfo template <id>`, `/jinfo preview [ник]` (открывает полный экран),
+  кнопка «Шаблоны» в редакторе (`JInfoTemplateScreen`), локализация редактора и `/jinfo help`
+  (ru/uk/en), Mod Menu entrypoint + `JInfoSettingsScreen` с кнопками (жест, 3 языка,
+  редактор/веб/мой профиль). В профиль/карточку добавлен авто-логин перед запросом.
 - **Фикс ника на пиратке** — `MinecraftSession.currentUsername()` теперь берёт ник
   локального игрока (`getName` → `getGameProfile` → `getScoreboardName`), затем сессию,
   затем пользователя лаунчера; `/jinfo web` и `/jinfo me` больше не падают с
