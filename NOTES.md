@@ -1,6 +1,10 @@
 # JInfo — статус и заметки
 
 ## Краткий итог (сверху)
+- **Фикс ника на пиратке** — `MinecraftSession.currentUsername()` теперь берёт ник
+  локального игрока (`getName` → `getGameProfile` → `getScoreboardName`), затем сессию,
+  затем пользователя лаунчера; `/jinfo web` и `/jinfo me` больше не падают с
+  «не удалось определить ник». Открытие профиля по `P` использует v4-сессию, иначе offline UUID.
 - **Версия и апдейты** — `mod_version=0.1beta`; workflow по тегу `v*` собирает эту версию,
   создаёт GitHub Release с jar и `update.json` (version/file/sha256). В моде: проверка
   последнего релиза при входе (чат) и `/jinfo update`; сравнение версий, без автоустановки.
