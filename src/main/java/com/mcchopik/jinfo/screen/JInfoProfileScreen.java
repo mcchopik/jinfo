@@ -150,6 +150,12 @@ public class JInfoProfileScreen extends Screen {
     private void loadProfile() {
         CompletableFuture.runAsync(() -> {
             try {
+                if (!api.isLoggedIn()) {
+                    String self = MinecraftSession.currentUsername().orElse(null);
+                    if (self != null) {
+                        api.login(self);
+                    }
+                }
                 ProfileData data = api.getProfile(uuid);
                 ParsedProfile p = parser.parse(data.data(), Lang.RU);
                 onClient(() -> {

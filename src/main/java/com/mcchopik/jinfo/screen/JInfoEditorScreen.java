@@ -1,10 +1,11 @@
 package com.mcchopik.jinfo.screen;
 
+import com.mcchopik.jinfo.config.JInfoConfig;
 import com.mcchopik.jinfo.net.ApiClient;
 import com.mcchopik.jinfo.net.ApiException;
 import com.mcchopik.jinfo.net.MinecraftSession;
 import com.mcchopik.jinfo.net.ProfileData;
-import com.mcchopik.jinfo.text.Lang;
+import com.mcchopik.jinfo.text.Messages;
 import com.mcchopik.jinfo.text.ParsedProfile;
 import com.mcchopik.jinfo.text.Service;
 import com.mcchopik.jinfo.text.TextParser;
@@ -51,6 +52,7 @@ public class JInfoEditorScreen extends Screen {
     private EditBox hexField;
     private String status = "";
     private int statusColor = 0xFFAAAAAA;
+    private String pendingText;
 
     private int textTop;
     private int previewX;
@@ -59,7 +61,7 @@ public class JInfoEditorScreen extends Screen {
     private int previewBottom;
 
     public JInfoEditorScreen(ApiClient api, Screen parent) {
-        super(Component.literal("JInfo — редактор"));
+        super(Component.literal("JInfo"));
         this.api = api;
         this.parent = parent;
         this.lines.add("");
@@ -68,7 +70,26 @@ public class JInfoEditorScreen extends Screen {
     @Override
     protected void init() {
         rebuild();
-        loadCurrentProfile();
+        if (pendingText != null) {
+            String text = pendingText;
+            pendingText = null;
+            setText(text);
+        } else {
+            loadCurrentProfile();
+        }
+    }
+
+    public void applyTemplate(String text) {
+        this.pendingText = text;
+        if (minecraft != null) {
+            minecraft.gui.setScreen(this);
+        }
+    }
+
+    private void openTemplates() {
+        if (minecraft != null) {
+            minecraft.gui.setScreen(new JInfoTemplateScreen(this));
+        }
     }
 
     // ------------------------------------------------------------------
@@ -93,7 +114,7 @@ public class JInfoEditorScreen extends Screen {
         int y = textTop;
         for (int i = 0; i < lines.size(); i++) {
             EditBox box = new EditBox(font, areaLeft, y, areaWidth, LINE_H,
-                    Component.literal("Строка " + (i + 1)));
+                    Component.literal(Messages.s("editor_line") + (i + 1)));
             box.setMaxLength(MAX_CHARS);
             box.setValue(lines.get(i));
             final int idx = i;
@@ -166,16 +187,15 @@ public class JInfoEditorScreen extends Screen {
 
         // Действия
         int ay = afterServices;
-        addRenderableWidget(Button.builder(Component.literal("Добавить строку"), b -> addLine())
+        addRenderableWidget(Button.builder(Component.literal(Messages.s("editor_add_line")), b -> addLine())
                 .bounds(left, ay, 100, bh).build());
-        addRenderableWidget(Button.builder(Component.literal("Сохранить"), b -> save())
+        addRenderableWidget(Button.builder(Component.literal(Messages.s("editor_save")), b -> save())
                 .bounds(left + 104, ay, 70, bh).build());
-        addRenderableWidget(Button.builder(Component.literal("Очистить"), b -> clearText())
+        addRenderableWidget(Button.builder(Component.literal(Messages.s("editor_clear")), b -> clearText())
                 .bounds(left + 178, ay, 70, bh).build());
-        addRenderableWidget(Button.builder(Component.literal("Отмена"), b -> onClose())
+        addRenderableWidget(Button.builder(Component.literal(Messages.s("editor_cancel")), b -> onClose())
                 .bounds(left + 252, ay, 60, bh).build());
-        addRenderableWidget(Button.builder(Component.literal("В браузере"), b ->
-                setStatus("Веб-редактор появится на следующем шаге.", 0xFFFFAA00))
+        addRenderableWidget(Button.builder(Component.literal(Messages.s("editor_templates")), b -> openTemplates())
                 .bounds(left + 316, ay, 90, bh).build());
 
         int hexY2 = afterServices;
@@ -199,7 +219,7 @@ public class JInfoEditorScreen extends Screen {
         if (v.matches("#[0-9a-fA-F]{6}")) {
             append("&#" + v.substring(1).toUpperCase());
         } else {
-            setStatus("Неверный hex-цвет. Формат: #RRGGBB", 0xFFFF5555);
+            setStatus(Messages.s("editor_hex_invalid"), 0xFFFF5555);
         }
     }
 
@@ -210,7 +230,7 @@ public class JInfoEditorScreen extends Screen {
     private void addLine() {
         capture();
         if (lines.size() >= MAX_LINES) {
-            setStatus("Достигнут лимит " + MAX_LINES + " строк.", 0xFFFFAA00);
+            setStatus(Messages.s("editor_limit_lines") + MAX_LINES, 0xFFFFAA00);
             return;
         }
         lines.add("");
@@ -222,7 +242,7 @@ public class JInfoEditorScreen extends Screen {
         lines.clear();
         lines.add("");
         rebuild();
-        setStatus("Текст очищен.", 0xFFAAAAAA);
+        setStatus(Messages.s("editor_text_cleared"), 0xFFAAAAAA);
     }
 
     private EditBox focusedLine() {
@@ -243,7 +263,7 @@ public class JInfoEditorScreen extends Screen {
         if (v.length() <= MAX_CHARS) {
             box.setValue(v);
         } else {
-            setStatus("Достигнут лимит символов.", 0xFFFFAA00);
+            setStatus(Messages.s("editor_limit_chars"), 0xFFFFAA00);
         }
     }
 
@@ -265,28 +285,28 @@ public class JInfoEditorScreen extends Screen {
 
     private void save() {
         String text = joined();
-        ParsedProfile parsed = parser.parse(text, Lang.RU);
+        ParsedProfile parsed = parser.parse(text, JInfoConfig.language());
         if (parsed.overLimits()) {
-            setStatus("Превышены лимиты: 500 символов / 10 строк / 6 ссылок.", 0xFFFF5555);
+            setStatus(Messages.s("editor_over_limits"), 0xFFFF5555);
             return;
         }
         String name = MinecraftSession.currentUsername().orElse(null);
         if (name == null) {
-            setStatus("Не удалось определить ник игрока.", 0xFFFF5555);
+            setStatus(Messages.s("editor_nick_unknown"), 0xFFFF5555);
             return;
         }
-        setStatus("Сохранение...", 0xFFAAAAAA);
+        setStatus(Messages.s("editor_saving"), 0xFFAAAAAA);
         CompletableFuture.runAsync(() -> {
             try {
                 if (!api.isLoggedIn()) {
                     api.login(name);
                 }
                 api.putProfile(text);
-                onClient(() -> setStatus("Профиль сохранён.", 0xFF55FF55));
+                onClient(() -> setStatus(Messages.s("editor_saved"), 0xFF55FF55));
             } catch (ApiException e) {
                 onClient(() -> setStatus(describe(e), 0xFFFF5555));
             } catch (Exception e) {
-                onClient(() -> setStatus("Ошибка: " + e.getMessage(), 0xFFFF5555));
+                onClient(() -> setStatus(Messages.s("editor_error") + e.getMessage(), 0xFFFF5555));
             }
         });
     }
@@ -340,10 +360,10 @@ public class JInfoEditorScreen extends Screen {
 
     private static String describe(ApiException e) {
         return switch (e.statusCode()) {
-            case 429 -> "Слишком часто. Подожди немного.";
-            case 401 -> "Не удалось авторизоваться.";
-            case 404 -> "Профиль не заполнен.";
-            default -> "Ошибка (" + e.statusCode() + "): " + e.getMessage();
+            case 429 -> Messages.s("err_rate");
+            case 401 -> Messages.s("err_auth");
+            case 404 -> Messages.s("err_not_filled");
+            default -> Messages.s("err_generic") + " (" + e.statusCode() + "): " + e.getMessage();
         };
     }
 
@@ -354,15 +374,15 @@ public class JInfoEditorScreen extends Screen {
     @Override
     public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
         graphics.fill(0, 0, width, height, 0xE6101418);
-        graphics.text(font, "JInfo — редактор профиля", MARGIN, 12, 0xFFFFFFFF, true);
-        String counter = charCount() + " / " + MAX_CHARS + " символов, "
-                + lines.size() + " / " + MAX_LINES + " строк";
+        graphics.text(font, Messages.s("editor_title"), MARGIN, 12, 0xFFFFFFFF, true);
+        String counter = charCount() + " / " + MAX_CHARS + " " + Messages.s("editor_counter_chars") + ", "
+                + lines.size() + " / " + MAX_LINES + " " + Messages.s("editor_counter_lines");
         graphics.text(font, counter, MARGIN, 24, 0xFFAAAAAA, false);
 
         // Рамка предпросмотра
         if (previewW > 20 && previewBottom > previewY) {
             graphics.fill(previewX - 4, previewY - 14, width - MARGIN, previewBottom, 0xAA1E242B);
-            graphics.text(font, "Предпросмотр", previewX, previewY - 12, 0xFFFFFFFF, true);
+            graphics.text(font, Messages.s("editor_preview"), previewX, previewY - 12, 0xFFFFFFFF, true);
             drawPreview(graphics);
         }
 
@@ -374,7 +394,7 @@ public class JInfoEditorScreen extends Screen {
     }
 
     private void drawPreview(GuiGraphicsExtractor graphics) {
-        ParsedProfile parsed = parser.parse(joined(), Lang.RU);
+        ParsedProfile parsed = parser.parse(joined(), JInfoConfig.language());
         int y = previewY + 2;
         int lineStep = 10;
         for (String rawLine : parsed.plainText().split("\n", -1)) {

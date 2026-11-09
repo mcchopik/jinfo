@@ -1,5 +1,6 @@
 package com.mcchopik.jinfo.command;
 
+import com.mcchopik.jinfo.JInfoClient;
 import com.mcchopik.jinfo.config.JInfoConfig;
 import com.mcchopik.jinfo.net.ApiClient;
 import com.mcchopik.jinfo.net.ApiException;
@@ -8,8 +9,11 @@ import com.mcchopik.jinfo.net.PlayerResolver;
 import com.mcchopik.jinfo.net.ProfileData;
 import com.mcchopik.jinfo.net.UpdateChecker;
 import com.mcchopik.jinfo.screen.JInfoEditorScreen;
+import com.mcchopik.jinfo.screen.JInfoProfileScreen;
 import com.mcchopik.jinfo.screen.JInfoSettingsScreen;
+import com.mcchopik.jinfo.text.Messages;
 import com.mcchopik.jinfo.text.ParsedProfile;
+import com.mcchopik.jinfo.text.ProfileTemplates;
 import com.mcchopik.jinfo.text.TextParser;
 import com.mcchopik.jinfo.web.WebServer;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -70,6 +74,16 @@ public final class JInfoCommand {
                             return 1;
                         }))
                         .then(lit("update").executes(ctx -> update(ctx.getSource())))
+                        .then(lit("template")
+                                .executes(ctx -> templates(ctx.getSource()))
+                                .then(arg("id", StringArgumentType.word())
+                                        .executes(ctx -> applyTemplate(ctx.getSource(), api,
+                                                StringArgumentType.getString(ctx, "id")))))
+                        .then(lit("preview")
+                                .executes(ctx -> previewSelf(ctx.getSource(), api))
+                                .then(arg("name", StringArgumentType.word())
+                                        .executes(ctx -> preview(ctx.getSource(), api,
+                                                StringArgumentType.getString(ctx, "name")))))
                         .then(lit("me").executes(ctx -> me(ctx.getSource(), api)))
                         .then(lit("clear").executes(ctx -> clear(ctx.getSource(), api)))
                         .then(lit("view").then(arg("name", StringArgumentType.word())
@@ -87,28 +101,74 @@ public final class JInfoCommand {
     // ------------------------------------------------------------------
 
     private static int help(FabricClientCommandSource src) {
-        reply(src, "=== JInfo — профиль игрока ===");
-        reply(src, "/jinfo help — эта справка");
-        reply(src, "/jinfo edit — открыть редактор в игре");
-        reply(src, "/jinfo web — открыть редактор в браузере");
-        reply(src, "/jinfo settings — язык и жест Shift+ПКМ");
-        reply(src, "/jinfo update — проверить обновления");
-        reply(src, "/jinfo set <текст> — быстро задать текст");
-        reply(src, "/jinfo me — показать мой профиль");
-        reply(src, "/jinfo view <ник> — профиль игрока");
-        reply(src, "/jinfo clear — удалить мой профиль");
-        reply(src, "--- Плейсхолдеры сервисов ---");
-        reply(src, "{youtube}, {twitch}, {discord}, {telegram}, {tiktok}, {instagram},");
-        reply(src, "{x}, {github}, {steam}, {vk}, {reddit}, {kick}, {boosty},");
-        reply(src, "{donationalerts}, {modrinth}");
-        reply(src, "После плейсхолдера пиши @ник или полную ссылку.");
-        reply(src, "Пример: {youtube} @vasya");
-        reply(src, "Универсальная ссылка: {link:Название} https://example.com");
-        reply(src, "--- Цвета и стили ---");
-        reply(src, "&0-&9, &a-&f — цвета; &l жирный; &o курсив; &n подчёркнутый;");
-        reply(src, "&m зачёркнутый; &r сброс; hex: &#RRGGBB; &k запрещён.");
-        reply(src, "Лимиты: 500 символов, 10 строк, до 6 ссылок.");
+        for (String line : Messages.s("help").split("\n", -1)) {
+            reply(src, line);
+        }
         return 1;
+    }
+
+    private static int templates(FabricClientCommandSource src) {
+        reply(src, "=== " + Messages.s("templates") + " ===");
+        for (ProfileTemplates t : ProfileTemplates.values()) {
+            reply(src, "/jinfo template " + t.id() + " — " + t.label(JInfoConfig.language()));
+        }
+        reply(src, Messages.s("template_hint"));
+        return 1;
+    }
+
+    private static int applyTemplate(FabricClientCommandSource src, ApiClient api, String id) {
+        ProfileTemplates template = ProfileTemplates.byId(id);
+        if (template == null) {
+            reply(src, Messages.s("template_unknown"));
+            return 0;
+        }
+        String name = selfName();
+        if (name == null) {
+            reply(src, Messages.s("editor_nick_unknown"));
+            return 0;
+        }
+        String text = template.text(JInfoConfig.language());
+        reply(src, Messages.s("editor_saving"));
+        CompletableFuture.runAsync(() -> {
+            try {
+                if (!api.isLoggedIn()) {
+                    api.login(name);
+                }
+                api.putProfile(text);
+                reply(src, Messages.s("template_applied"));
+            } catch (ApiException e) {
+                reply(src, describe(e));
+            } catch (Exception e) {
+                reply(src, Messages.s("editor_error") + e.getMessage());
+            }
+        });
+        return 1;
+    }
+
+    private static int previewSelf(FabricClientCommandSource src, ApiClient api) {
+        String name = selfName();
+        if (name == null) {
+            reply(src, Messages.s("editor_nick_unknown"));
+            return 0;
+        }
+        openProfile(src.getClient(), api, JInfoClient.selfUuid(name), name);
+        return 1;
+    }
+
+    private static int preview(FabricClientCommandSource src, ApiClient api, String target) {
+        Minecraft client = src.getClient();
+        String uuid = looksLikeUuid(target)
+                ? normalizeUuid(target)
+                : PlayerResolver.resolveUuid(target, client);
+        openProfile(client, api, uuid, target);
+        return 1;
+    }
+
+    private static void openProfile(Minecraft client, ApiClient api, String uuid, String name) {
+        client.execute(() -> {
+            Screen parent = client.gui.screen();
+            client.gui.setScreen(new JInfoProfileScreen(api, uuid, name, null, parent));
+        });
     }
 
     private static int update(FabricClientCommandSource src) {
@@ -134,7 +194,7 @@ public final class JInfoCommand {
     private static int me(FabricClientCommandSource src, ApiClient api) {
         String name = selfName();
         if (name == null) {
-            reply(src, "Не удалось определить ник игрока.");
+            reply(src, Messages.s("editor_nick_unknown"));
             return 0;
         }
         reply(src, "Загрузка профиля...");
@@ -159,7 +219,7 @@ public final class JInfoCommand {
     private static int view(FabricClientCommandSource src, ApiClient api, String target) {
         String name = selfName();
         if (name == null) {
-            reply(src, "Не удалось определить ник игрока.");
+            reply(src, Messages.s("editor_nick_unknown"));
             return 0;
         }
         String uuid = looksLikeUuid(target)
@@ -186,7 +246,7 @@ public final class JInfoCommand {
     private static int set(FabricClientCommandSource src, ApiClient api, String text) {
         String name = selfName();
         if (name == null) {
-            reply(src, "Не удалось определить ник игрока.");
+            reply(src, Messages.s("editor_nick_unknown"));
             return 0;
         }
         ParsedProfile parsed = PARSER.parse(text, JInfoConfig.language());
@@ -214,7 +274,7 @@ public final class JInfoCommand {
     private static int clear(FabricClientCommandSource src, ApiClient api) {
         String name = selfName();
         if (name == null) {
-            reply(src, "Не удалось определить ник игрока.");
+            reply(src, Messages.s("editor_nick_unknown"));
             return 0;
         }
         reply(src, "Удаляю профиль...");
@@ -241,7 +301,7 @@ public final class JInfoCommand {
     private static int webStart(FabricClientCommandSource src, ApiClient api) {
         String name = selfName();
         if (name == null) {
-            reply(src, "Не удалось определить ник игрока.");
+            reply(src, Messages.s("editor_nick_unknown"));
             return 0;
         }
         Minecraft client = src.getClient();
@@ -294,10 +354,10 @@ public final class JInfoCommand {
 
     private static String describe(ApiException e) {
         return switch (e.statusCode()) {
-            case 429 -> "Слишком часто. Подожди немного.";
-            case 401 -> "Не удалось авторизоваться.";
-            case 404 -> "Профиль не заполнен.";
-            default -> "Ошибка (" + e.statusCode() + "): " + e.getMessage();
+            case 429 -> Messages.s("err_rate");
+            case 401 -> Messages.s("err_auth");
+            case 404 -> Messages.s("err_not_filled");
+            default -> Messages.s("err_generic") + " (" + e.statusCode() + "): " + e.getMessage();
         };
     }
 

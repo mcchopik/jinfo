@@ -16,9 +16,15 @@
     "client": [
       "com.mcchopik.jinfo.JInfoClient"
     ],
+    "modmenu": [
+      "com.mcchopik.jinfo.compat.JInfoModMenu"
+    ],
     "main": [
       "com.mcchopik.jinfo.JInfoMod"
     ]
+  },
+  "suggests": {
+    "modmenu": "*"
   },
   "depends": {
     "fabricloader": ">=0.20.1",
