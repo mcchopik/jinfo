@@ -1,9 +1,9 @@
 package com.mcchopik.jinfo.screen;
 
+import com.mcchopik.jinfo.JInfoClient;
 import com.mcchopik.jinfo.config.JInfoConfig;
 import com.mcchopik.jinfo.net.ApiClient;
 import com.mcchopik.jinfo.net.ApiException;
-import com.mcchopik.jinfo.net.MinecraftSession;
 import com.mcchopik.jinfo.net.ProfileData;
 import com.mcchopik.jinfo.text.Messages;
 import com.mcchopik.jinfo.text.ParsedProfile;
@@ -277,7 +277,7 @@ public class JInfoEditorScreen extends Screen {
             setStatus(Messages.s("editor_over_limits"), 0xFFFF5555);
             return;
         }
-        String name = MinecraftSession.currentUsername().orElse(null);
+        String name = JInfoClient.selfName();
         if (name == null) {
             setStatus(Messages.s("editor_nick_unknown"), 0xFFFF5555);
             return;
@@ -299,7 +299,7 @@ public class JInfoEditorScreen extends Screen {
     }
 
     private void loadCurrentProfile() {
-        String name = MinecraftSession.currentUsername().orElse(null);
+        String name = JInfoClient.selfName();
         CompletableFuture.runAsync(() -> {
             try {
                 if (!api.isLoggedIn()) {

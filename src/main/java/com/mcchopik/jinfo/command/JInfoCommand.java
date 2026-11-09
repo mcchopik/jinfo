@@ -4,7 +4,6 @@ import com.mcchopik.jinfo.JInfoClient;
 import com.mcchopik.jinfo.config.JInfoConfig;
 import com.mcchopik.jinfo.net.ApiClient;
 import com.mcchopik.jinfo.net.ApiException;
-import com.mcchopik.jinfo.net.MinecraftSession;
 import com.mcchopik.jinfo.net.PlayerResolver;
 import com.mcchopik.jinfo.net.ProfileData;
 import com.mcchopik.jinfo.net.UpdateChecker;
@@ -423,7 +422,7 @@ public final class JInfoCommand {
     }
 
     private static String selfName() {
-        return MinecraftSession.currentUsername().orElse(null);
+        return JInfoClient.selfName();
     }
 
     private static void reply(FabricClientCommandSource src, String text) {

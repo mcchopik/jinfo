@@ -19,18 +19,34 @@ public final class MinecraftSession {
             if (client == null) {
                 return Optional.empty();
             }
-            Object session = invoke(client, "getSession");
-            if (session == null) {
-                return Optional.empty();
+            String accessToken = null;
+            String username = null;
+            String uuid = null;
+            Object user = invoke(client, "getUser");
+            if (user != null) {
+                accessToken = asString(invoke(user, "getAccessToken"));
+                username = asString(invoke(user, "getName"));
+                uuid = asString(invoke(user, "getProfileId"));
             }
-            String accessToken = asString(invoke(session, "getAccessToken"));
-            String username = asString(invoke(session, "getUsername"));
-            String uuid = asString(invoke(session, "getUuidOrNull"));
             if (uuid == null) {
-                uuid = asString(invoke(session, "getProfileId"));
+                Object profile = invoke(client, "getGameProfile");
+                if (profile != null) {
+                    uuid = asString(invoke(profile, "getId"));
+                }
             }
-            if (uuid == null) {
-                uuid = asString(invoke(session, "getUuid"));
+            if (accessToken == null || accessToken.isEmpty() || uuid == null) {
+                Object session = invoke(client, "getSession");
+                if (session != null) {
+                    accessToken = asString(invoke(session, "getAccessToken"));
+                    username = asString(invoke(session, "getUsername"));
+                    uuid = asString(invoke(session, "getUuidOrNull"));
+                    if (uuid == null) {
+                        uuid = asString(invoke(session, "getProfileId"));
+                    }
+                    if (uuid == null) {
+                        uuid = asString(invoke(session, "getUuid"));
+                    }
+                }
             }
             if (uuid != null) {
                 uuid = uuid.replace("-", "");
@@ -95,6 +111,9 @@ public final class MinecraftSession {
             return name.trim();
         }
         Object component = invoke(owner, "getName");
+        if (component instanceof String directName) {
+            return valid(directName) ? directName.trim() : null;
+        }
         String text = component == null ? null : asString(invoke(component, "getString"));
         if (valid(text)) {
             return text.trim();

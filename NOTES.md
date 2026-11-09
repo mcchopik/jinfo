@@ -7,6 +7,11 @@
   дополнение к информации в полном профиле; голова в карточке всегда из скина.
   Веб-редактор показывает `<img>` (CSP img-src https:), кнопка «Фото» в редакторе
   и `/jinfo photo <url>` / `photo off` в командах.
+- **Ник игрока** — `MinecraftSession` в 26.2 читает `Minecraft.getUser()`
+  (`getName`, `getAccessToken`, `getProfileId`) и `getGameProfile()`; если ник
+  определить не удалось, `JInfoNickScreen` спрашивает его, галочка «Запомнить ник»
+  сохраняет значение в `config/jinfo/config.json` (`nickname`). Отдельная кнопка
+  «Свой ник» есть в настройках и Mod Menu.
 - **3D-скин в полном профиле** — `SkinViewer` (`AbstractWidget`) на `Model.Simple` +
   `ModelLayers.PLAYER/PLAYER_SLIM`, `GuiGraphicsExtractor.skin`: вращение мышью,
   кнопки включения слоёв шляпы, куртки, рукавов и штанов; скин всегда соответствует

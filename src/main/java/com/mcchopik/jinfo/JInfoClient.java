@@ -8,10 +8,13 @@ import com.mcchopik.jinfo.net.MinecraftSession;
 import com.mcchopik.jinfo.net.PlayerResolver;
 import com.mcchopik.jinfo.net.UpdateChecker;
 import com.mcchopik.jinfo.screen.JInfoCardScreen;
+import com.mcchopik.jinfo.screen.JInfoNickScreen;
 import com.mcchopik.jinfo.screen.JInfoProfileScreen;
 import com.mcchopik.jinfo.web.WebServer;
 import java.nio.file.Path;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -78,12 +81,28 @@ public class JInfoClient implements ClientModInitializer {
     }
 
     private void openSelf(Minecraft client) {
-        String name = MinecraftSession.currentUsername().orElse(null);
-        if (name == null || name.isEmpty()) {
+        Screen parent = client.gui.screen();
+        requireSelfName(parent, name -> client.gui.setScreen(
+                new JInfoProfileScreen(api, selfUuid(name), name, null, parent)));
+    }
+
+    public static String selfName() {
+        return MinecraftSession.currentUsername()
+                .or(() -> Optional.ofNullable(JInfoConfig.nickname())
+                        .filter(name -> !name.isBlank()))
+                .orElse(null);
+    }
+
+    public static void requireSelfName(Screen parent, Consumer<String> action) {
+        String name = selfName();
+        if (name != null) {
+            action.accept(name);
             return;
         }
-        Screen parent = client.gui.screen();
-        client.gui.setScreen(new JInfoProfileScreen(api, selfUuid(name), name, null, parent));
+        Minecraft client = Minecraft.getInstance();
+        if (client != null) {
+            client.gui.setScreen(new JInfoNickScreen(parent, JInfoConfig.nickname(), action));
+        }
     }
 
     public static String selfUuid(String name) {

@@ -2,7 +2,6 @@ package com.mcchopik.jinfo.screen;
 
 import com.mcchopik.jinfo.JInfoClient;
 import com.mcchopik.jinfo.config.JInfoConfig;
-import com.mcchopik.jinfo.net.MinecraftSession;
 import com.mcchopik.jinfo.text.Lang;
 import com.mcchopik.jinfo.text.Messages;
 import com.mcchopik.jinfo.web.WebServer;
@@ -78,8 +77,12 @@ public class JInfoSettingsScreen extends Screen {
         addRenderableWidget(Button.builder(Component.literal(Messages.s("open_web")), b -> openWeb())
                 .bounds(x, actionY + 26, w, 20)
                 .build());
+        int half = (w - 8) / 2;
         addRenderableWidget(Button.builder(Component.literal(Messages.s("my_profile")), b -> openMyProfile())
-                .bounds(x, actionY + 52, w, 20)
+                .bounds(x, actionY + 52, half, 20)
+                .build());
+        addRenderableWidget(Button.builder(Component.literal(Messages.s("change_nick")), b -> openNickEditor())
+                .bounds(x + half + 8, actionY + 52, w - half - 8, 20)
                 .build());
 
         addRenderableWidget(Button.builder(Component.literal(Messages.s("back")), b -> onClose())
@@ -94,23 +97,25 @@ public class JInfoSettingsScreen extends Screen {
     }
 
     private void openMyProfile() {
-        String name = MinecraftSession.currentUsername().orElse(null);
-        if (name == null) {
-            note = Messages.s("editor_nick_unknown");
-            return;
-        }
+        JInfoClient.requireSelfName(this, name -> {
+            if (minecraft != null) {
+                minecraft.gui.setScreen(new JInfoProfileScreen(
+                        JInfoClient.api(), JInfoClient.selfUuid(name), name, null, this));
+            }
+        });
+    }
+
+    private void openNickEditor() {
         if (minecraft != null) {
-            minecraft.gui.setScreen(new JInfoProfileScreen(
-                    JInfoClient.api(), JInfoClient.selfUuid(name), name, null, this));
+            minecraft.gui.setScreen(new JInfoNickScreen(this, JInfoClient.selfName(), nick -> rebuild()));
         }
     }
 
     private void openWeb() {
-        String name = MinecraftSession.currentUsername().orElse(null);
-        if (name == null) {
-            note = Messages.s("editor_nick_unknown");
-            return;
-        }
+        JInfoClient.requireSelfName(this, this::startWeb);
+    }
+
+    private void startWeb(String name) {
         note = Messages.s("loading");
         CompletableFuture.runAsync(() -> {
             try {

@@ -98,6 +98,15 @@ public final class Messages {
         put("open_editor", "Открыть редактор", "Відкрити редактор", "Open editor");
         put("open_web", "Открыть веб-редактор", "Відкрити веб-редактор", "Open web editor");
         put("my_profile", "Мой профиль", "Мій профіль", "My profile");
+        put("change_nick", "Свой ник", "Свій нік", "My nickname");
+        put("nick_title", "Ник игрока", "Нік гравця", "Player nickname");
+        put("nick_hint", "Не удалось определить ник автоматически. Введите его:",
+                "Не вдалося визначити нік автоматично. Введіть його:",
+                "Could not detect your nickname automatically. Enter it:");
+        put("nick_remember", "Запомнить ник", "Запам'ятати нік", "Remember nickname");
+        put("nick_continue", "Продолжить", "Продовжити", "Continue");
+        put("nick_invalid", "Введите ник (до 16 символов).", "Введіть нік (до 16 символів).",
+                "Enter a nickname (up to 16 characters).");
         put("preview_opening", "Открываю профиль...", "Відкриваю профіль...", "Opening profile...");
 
         put("err_rate", "Слишком часто. Подожди немного.",

@@ -12,6 +12,7 @@ public final class JInfoConfig {
     private static Path file;
     private static boolean gestureEnabled = true;
     private static Lang language = Lang.RU;
+    private static String nickname = "";
 
     private JInfoConfig() {
     }
@@ -39,6 +40,15 @@ public final class JInfoConfig {
         save();
     }
 
+    public static synchronized String nickname() {
+        return nickname;
+    }
+
+    public static synchronized void setNickname(String value) {
+        nickname = value == null ? "" : value.trim();
+        save();
+    }
+
     private static void load() {
         try {
             if (file != null && Files.exists(file)) {
@@ -52,6 +62,9 @@ public final class JInfoConfig {
                         language = Lang.valueOf(obj.get("language").getAsString());
                     } catch (Exception ignored) {
                     }
+                }
+                if (obj.has("nickname")) {
+                    nickname = obj.get("nickname").getAsString();
                 }
             }
         } catch (Exception ignored) {
@@ -67,6 +80,9 @@ public final class JInfoConfig {
             JsonObject obj = new JsonObject();
             obj.addProperty("gestureEnabled", gestureEnabled);
             obj.addProperty("language", language.name());
+            if (!nickname.isBlank()) {
+                obj.addProperty("nickname", nickname);
+            }
             Files.writeString(file, obj.toString(), StandardCharsets.UTF_8);
         } catch (Exception ignored) {
         }

@@ -1,9 +1,9 @@
 package com.mcchopik.jinfo.screen;
 
+import com.mcchopik.jinfo.JInfoClient;
 import com.mcchopik.jinfo.config.JInfoConfig;
 import com.mcchopik.jinfo.net.ApiClient;
 import com.mcchopik.jinfo.net.ApiException;
-import com.mcchopik.jinfo.net.MinecraftSession;
 import com.mcchopik.jinfo.net.PhotoTextures;
 import com.mcchopik.jinfo.net.ProfileData;
 import com.mcchopik.jinfo.text.Messages;
@@ -244,7 +244,7 @@ public class JInfoProfileScreen extends Screen {
         CompletableFuture.runAsync(() -> {
             try {
                 if (!api.isLoggedIn()) {
-                    String self = MinecraftSession.currentUsername().orElse(null);
+                    String self = JInfoClient.selfName();
                     if (self != null) {
                         api.login(self);
                     }
@@ -291,7 +291,7 @@ public class JInfoProfileScreen extends Screen {
         CompletableFuture.runAsync(() -> {
             try {
                 if (!api.isLoggedIn()) {
-                    String self = MinecraftSession.currentUsername().orElse(null);
+                    String self = JInfoClient.selfName();
                     if (self != null) {
                         api.login(self);
                     }
