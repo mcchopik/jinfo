@@ -122,7 +122,7 @@ async function handleAuthOffline(request, env) {
 		return json({ error: 'Timestamp too old' }, 400);
 	}
 
-	const uuid = generateOfflineUuid(username);
+	const uuid = await generateOfflineUuid(username);
 	const formattedUuid = formatUuid(uuid);
 
 	const isValid = await verifyEd25519(publicKey, `${username}:${timestamp}`, signature);
@@ -349,9 +349,9 @@ function base64ToBytes(b64) {
 	return bytes;
 }
 
-function generateOfflineUuid(username) {
+async function generateOfflineUuid(username) {
 	const data = `OfflinePlayer:${username}`;
-	const hash = md5(data);
+	const hash = await md5(data);
 	return hash.slice(0, 8) + hash.slice(8, 12) + '3' + hash.slice(13, 16) + '8' + hash.slice(17, 20) + hash.slice(20, 32);
 }
 

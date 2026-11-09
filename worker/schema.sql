@@ -5,6 +5,12 @@ CREATE TABLE IF NOT EXISTS offline_keys (
     created INTEGER NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS profiles (
+    uuid TEXT PRIMARY KEY,
+    data TEXT NOT NULL,
+    updated INTEGER NOT NULL
+);
+
 -- Таблица для жалоб на профили
 CREATE TABLE IF NOT EXISTS reports (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
