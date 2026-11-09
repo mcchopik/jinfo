@@ -6,11 +6,14 @@ import com.mcchopik.jinfo.net.ApiClient;
 import com.mcchopik.jinfo.net.ApiException;
 import com.mcchopik.jinfo.net.PhotoTextures;
 import com.mcchopik.jinfo.net.ProfileData;
+import com.mcchopik.jinfo.net.SkinTextures;
 import com.mcchopik.jinfo.text.Messages;
 import com.mcchopik.jinfo.text.ParsedProfile;
 import com.mcchopik.jinfo.text.Part;
 import com.mcchopik.jinfo.text.Service;
 import com.mcchopik.jinfo.text.TextParser;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.mojang.authlib.GameProfile;
 import java.util.ArrayList;
 import java.util.List;
@@ -23,6 +26,7 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.player.PlayerModelType;
 import net.minecraft.world.entity.player.PlayerSkin;
 
 public class JInfoProfileScreen extends Screen {
@@ -45,6 +49,10 @@ public class JInfoProfileScreen extends Screen {
     private int statusColor = 0xFFAAAAAA;
     private boolean verified = false;
     private boolean loading = true;
+
+    private PlayerSkin remoteSkin;
+    private String remoteSkinJson;
+    private String remoteSkinKey;
 
     private boolean hat = true;
     private boolean jacket = true;
@@ -118,25 +126,51 @@ public class JInfoProfileScreen extends Screen {
     }
 
     private Supplier<PlayerSkin> skinSupplier() {
-        if (skinSource instanceof AbstractClientPlayer player) {
-            return player::getSkin;
-        }
-        try {
-            Minecraft client = Minecraft.getInstance();
-            if (client == null) {
-                return () -> null;
+        return () -> {
+            if (remoteSkin != null) {
+                return remoteSkin;
             }
-            String id = uuid == null ? "" : uuid.replace("-", "");
-            if (id.length() != 32) {
-                return () -> null;
+            if (isSelfProfile()) {
+                String localSkin = getLocalSkinKey();
+                if (localSkin != null) {
+                    return SkinTextures.get(localSkin);
+                }
             }
-            UUID real = new UUID(Long.parseUnsignedLong(id.substring(0, 16), 16),
-                    Long.parseUnsignedLong(id.substring(16), 16));
-            GameProfile profile = new GameProfile(real, playerName);
-            return client.getSkinManager().createLookup(profile, true);
-        } catch (Throwable t) {
-            return () -> null;
+            if (skinSource instanceof AbstractClientPlayer player) {
+                return player.getSkin();
+            }
+            try {
+                Minecraft client = Minecraft.getInstance();
+                if (client == null) {
+                    return null;
+                }
+                String id = uuid == null ? "" : uuid.replace("-", "");
+                if (id.length() != 32) {
+                    return null;
+                }
+                UUID real = new UUID(Long.parseUnsignedLong(id.substring(0, 16), 16),
+                        Long.parseUnsignedLong(id.substring(16), 16));
+                GameProfile profile = new GameProfile(real, playerName);
+                return client.getSkinManager().createLookup(profile, true);
+            } catch (Throwable t) {
+                return null;
+            }
+        };
+    }
+
+    private boolean isSelfProfile() {
+        String self = JInfoClient.selfUuid(JInfoClient.selfName() != null ? JInfoClient.selfName() : "");
+        return self != null && self.equals(uuid);
+    }
+
+    private String getLocalSkinKey() {
+        if (JInfoConfig.skinMode() == JInfoConfig.SkinMode.AUTO) {
+            return null;
         }
+        return SkinTextures.cacheKey(
+                JInfoConfig.skinMode() == JInfoConfig.SkinMode.URL ? JInfoConfig.skinUrl() : null,
+                JInfoConfig.skinMode() == JInfoConfig.SkinMode.FILE ? JInfoConfig.skinFile() : null,
+                JInfoConfig.skinSlim());
     }
 
     private void setWidgets() {
@@ -251,14 +285,43 @@ public class JInfoProfileScreen extends Screen {
                 }
                 ProfileData data = api.getProfile(uuid);
                 ParsedProfile p = parser.parse(data.data(), JInfoConfig.language());
+                String skinJson = data.skin();
                 onClient(() -> {
                     parsed = p;
                     photo = PhotoTextures.get(p.avatarUrl());
+                    remoteSkinJson = skinJson;
                     loading = false;
                     verified = data.verified();
                     statusText = verified ? Messages.s("verified") : Messages.s("unverified");
                     statusColor = verified ? 0xFF55FF55 : 0xFFFFAA00;
                     setWidgets();
+                    if (skinJson != null && !skinJson.isBlank()) {
+                        try {
+                            JsonObject obj = JsonParser.parseString(skinJson).getAsJsonObject();
+                            String url = obj.has("url") ? obj.get("url").getAsString() : null;
+                            boolean slim = obj.has("model") && "slim".equals(obj.get("model").getAsString());
+                            remoteSkinKey = SkinTextures.cacheKey(url, null, slim);
+                            SkinTextures.loadAsync(remoteSkinKey, url, null, slim);
+                            CompletableFuture.runAsync(() -> {
+                                for (int i = 0; i < 200; i++) {
+                                    try { Thread.sleep(50); } catch (InterruptedException e) { break; }
+                                    if (SkinTextures.get(remoteSkinKey) != null) {
+                                        if (minecraft != null) {
+                                            minecraft.execute(() -> {
+                                                remoteSkin = SkinTextures.get(remoteSkinKey);
+                                                if (skinViewer != null) {
+                                                    // trigger repaint by setting a new supplier
+                                                    // skinViewer already uses the supplier
+                                                }
+                                            });
+                                        }
+                                        break;
+                                    }
+                                }
+                            });
+                        } catch (Exception ignored) {
+                        }
+                    }
                 });
             } catch (ApiException e) {
                 onClient(() -> {

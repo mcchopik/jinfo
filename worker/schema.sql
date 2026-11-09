@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS offline_keys (
 CREATE TABLE IF NOT EXISTS profiles (
     uuid TEXT PRIMARY KEY,
     data TEXT NOT NULL,
+    skin TEXT,
     updated INTEGER NOT NULL
 );
 

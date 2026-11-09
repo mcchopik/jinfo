@@ -1,14 +1,18 @@
 package com.mcchopik.jinfo.screen;
 
 import com.mcchopik.jinfo.JInfoClient;
+import com.mcchopik.jinfo.config.JInfoConfig;
 import com.mcchopik.jinfo.net.ApiClient;
 import com.mcchopik.jinfo.net.ApiException;
 import com.mcchopik.jinfo.net.ProfileData;
 import com.mcchopik.jinfo.net.SkinHelper;
+import com.mcchopik.jinfo.net.SkinTextures;
 import com.mcchopik.jinfo.text.Lang;
 import com.mcchopik.jinfo.text.Messages;
 import com.mcchopik.jinfo.text.ParsedProfile;
 import com.mcchopik.jinfo.text.TextParser;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import java.util.concurrent.CompletableFuture;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
@@ -88,12 +92,35 @@ public class JInfoCardScreen extends Screen {
                 }
                 ProfileData data = api.getProfile(uuid);
                 ParsedProfile p = parser.parse(data.data(), Lang.RU);
+                String skinJson = data.skin();
                 onClient(() -> {
                     parsed = p;
                     hasProfile = true;
                     verified = data.verified();
                     statusText = verified ? Messages.s("verified") : Messages.s("unverified");
                     statusColor = verified ? 0xFF55FF55 : 0xFFFFAA00;
+                    if (skinJson != null && !skinJson.isBlank()) {
+                        try {
+                            JsonObject obj = JsonParser.parseString(skinJson).getAsJsonObject();
+                            String url = obj.has("url") ? obj.get("url").getAsString() : null;
+                            boolean slim = obj.has("model") && "slim".equals(obj.get("model").getAsString());
+                            String key = SkinTextures.cacheKey(url, null, slim);
+                            SkinTextures.loadAsync(key, url, null, slim);
+                            CompletableFuture.runAsync(() -> {
+                                for (int i = 0; i < 200; i++) {
+                                    try { Thread.sleep(50); } catch (InterruptedException e) { break; }
+                                    PlayerSkin ps = SkinTextures.get(key);
+                                    if (ps != null) {
+                                        if (minecraft != null) {
+                                            minecraft.execute(() -> skin = ps.body().texturePath());
+                                        }
+                                        break;
+                                    }
+                                }
+                            });
+                        } catch (Exception ignored) {
+                        }
+                    }
                 });
             } catch (ApiException e) {
                 onClient(() -> {

@@ -109,6 +109,36 @@ public final class Messages {
                 "Enter a nickname (up to 16 characters).");
         put("preview_opening", "Открываю профиль...", "Відкриваю профіль...", "Opening profile...");
 
+        put("skin_title", "Настройки скина", "Налаштування скіна", "Skin settings");
+        put("skin_mode", "Режим", "Режим", "Mode");
+        put("skin_mode_auto", "Авто (свой скин)", "Авто (свій скін)", "Auto (your skin)");
+        put("skin_mode_url", "По ссылке", "По посиланню", "By URL");
+        put("skin_mode_file", "Из файла", "З файлу", "From file");
+        put("skin_model", "Модель", "Модель", "Model");
+        put("skin_model_classic", "Классика", "Класика", "Classic");
+        put("skin_model_slim", "Тощая (Slim)", "Тонка (Slim)", "Slim");
+        put("skin_url", "URL скина (https://...)", "URL скіна (https://...)", "Skin URL (https://...)");
+        put("skin_file", "Путь к PNG файлу", "Шлях до PNG файлу", "Path to PNG file");
+        put("skin_browse", "Выбрать файл...", "Вибрати файл...", "Choose file...");
+        put("skin_load", "Загрузить", "Завантажити", "Load");
+        put("skin_clear", "Сбросить", "Скинути", "Clear");
+        put("skin_preview", "Предпросмотр", "Попередній перегляд", "Preview");
+        put("skin_loading", "Загрузка...", "Завантаження...", "Loading...");
+        put("skin_loaded", "Скин загружен.", "Скін завантажено.", "Skin loaded.");
+        put("skin_error", "Ошибка загрузки: ", "Помилка завантаження: ", "Load error: ");
+        put("skin_invalid_dims", "Скин должен быть 64x64 или 64x32 пикселей.",
+                "Скін має бути 64x64 або 64x32 пікселі.",
+                "Skin must be 64x64 or 64x32 pixels.");
+        put("skin_invalid_url", "Нужна прямая https-ссылка на PNG.",
+                "Потрібне пряме https-посилання на PNG.",
+                "A direct https PNG link is required.");
+        put("skin_file_not_found", "Файл не найден.", "Файл не знайдено.", "File not found.");
+        put("skin_applied", "Скин применён. Сохранится при следующем сохранении профиля.",
+                "Скін застосовано. Збережеться при наступному збереженні профілю.",
+                "Skin applied. Will be saved on next profile save.");
+        put("skin_cleared", "Скин сброшен к автоматическому.", "Скін скинуто до автоматичного.", "Skin reset to automatic.");
+        put("skin_local_note", "Локальный файл не публикуется в профиль.", "Локальний файл не публікується у профіль.", "Local file is not published to profile.");
+
         put("err_rate", "Слишком часто. Подожди немного.",
                 "Занадто часто. Зачекай трохи.", "Too many requests. Wait a bit.");
         put("err_auth", "Не удалось авторизоваться.", "Не вдалося авторизуватися.", "Authorization failed.");

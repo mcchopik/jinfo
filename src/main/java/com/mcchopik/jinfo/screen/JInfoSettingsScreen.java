@@ -33,7 +33,7 @@ public class JInfoSettingsScreen extends Screen {
     @Override
     protected void init() {
         panelW = Math.min(width - 20, 340);
-        panelH = Math.min(height - 20, 300);
+        panelH = Math.min(height - 20, 340);
         panelX = (width - panelW) / 2;
         panelY = (height - panelH) / 2;
         rebuild();
@@ -77,12 +77,15 @@ public class JInfoSettingsScreen extends Screen {
         addRenderableWidget(Button.builder(Component.literal(Messages.s("open_web")), b -> openWeb())
                 .bounds(x, actionY + 26, w, 20)
                 .build());
+        addRenderableWidget(Button.builder(Component.literal(Messages.s("skin_title")), b -> openSkin())
+                .bounds(x, actionY + 52, w, 20)
+                .build());
         int half = (w - 8) / 2;
         addRenderableWidget(Button.builder(Component.literal(Messages.s("my_profile")), b -> openMyProfile())
-                .bounds(x, actionY + 52, half, 20)
+                .bounds(x, actionY + 78, half, 20)
                 .build());
         addRenderableWidget(Button.builder(Component.literal(Messages.s("change_nick")), b -> openNickEditor())
-                .bounds(x + half + 8, actionY + 52, w - half - 8, 20)
+                .bounds(x + half + 8, actionY + 78, w - half - 8, 20)
                 .build());
 
         addRenderableWidget(Button.builder(Component.literal(Messages.s("back")), b -> onClose())
@@ -93,6 +96,12 @@ public class JInfoSettingsScreen extends Screen {
     private void openEditor() {
         if (minecraft != null) {
             minecraft.gui.setScreen(new JInfoEditorScreen(JInfoClient.api(), this));
+        }
+    }
+
+    private void openSkin() {
+        if (minecraft != null) {
+            minecraft.gui.setScreen(new JInfoSkinScreen(this));
         }
     }
 

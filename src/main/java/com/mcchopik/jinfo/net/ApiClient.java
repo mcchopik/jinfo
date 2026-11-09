@@ -128,6 +128,10 @@ public final class ApiClient {
         String token = requireToken();
         JsonObject body = new JsonObject();
         body.addProperty("data", data);
+        String skin = com.mcchopik.jinfo.config.JInfoConfig.skinPayload();
+        if (skin != null) {
+            body.addProperty("skin", skin);
+        }
         requestJson("PUT", baseUrl + "/profile", body, token);
         String uuid = tokenStore.uuid();
         if (uuid != null) {
@@ -142,7 +146,8 @@ public final class ApiClient {
                 uuid,
                 stringOrNull(resp, "data"),
                 longOrZero(resp, "updated"),
-                boolOrFalse(resp, "verified"));
+                boolOrFalse(resp, "verified"),
+                stringOrNull(resp, "skin"));
         cache.put(data);
         return data;
     }

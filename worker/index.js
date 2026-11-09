@@ -27,11 +27,15 @@ export default {
 			if (path === '/profiles/batch' && request.method === 'POST') {
 				return await handleProfilesBatch(request, env);
 			}
-			if (path === '/report' && request.method === 'POST') {
-				return await handleReport(request, env);
-			}
+if (path === '/report' && request.method === 'POST') {
+			return await handleReport(request, env);
+		}
+		if (path.startsWith('/public/profile/') && request.method === 'GET') {
+			const uuid = path.slice('/public/profile/'.length);
+			return await handlePublicProfileGet(uuid, env);
+		}
 
-			return json({ error: 'Not found' }, 404);
+		return json({ error: 'Not found' }, 404);
 		} catch (e) {
 			console.error('Worker error:', e);
 			return json({ error: 'Internal server error' }, 500);
@@ -149,7 +153,7 @@ async function handleProfilePut(request, env) {
 	if (!auth) return json({ error: 'Unauthorized' }, 401);
 
 	const body = await request.json();
-	const { data } = body;
+	const { data, skin } = body;
 
 	if (!data || typeof data !== 'string') {
 		return json({ error: 'Data required' }, 400);
@@ -168,15 +172,32 @@ async function handleProfilePut(request, env) {
 		return json({ error: 'Too many links (max 6)' }, 400);
 	}
 
+	let skinVal = null;
+	if (skin) {
+		let parsed;
+		if (typeof skin === 'string') {
+			try {
+				parsed = JSON.parse(skin);
+			} catch (e) {
+				parsed = null;
+			}
+		} else if (typeof skin === 'object') {
+			parsed = skin;
+		}
+		if (parsed && parsed.url && typeof parsed.url === 'string' && parsed.url.startsWith('https://')) {
+			skinVal = typeof skin === 'string' ? skin : JSON.stringify(skin);
+		}
+	}
+
 	const cleaned = sanitizeProfileText(data);
 	const encrypted = await encryptProfile(cleaned, env.AES_KEY);
 	const now = Math.floor(Date.now() / 1000);
 
 	const result = await env.DB.prepare(
-		`INSERT INTO profiles (uuid, data, updated) VALUES (?, ?, ?)
-		 ON CONFLICT(uuid) DO UPDATE SET data = excluded.data, updated = excluded.updated
+		`INSERT INTO profiles (uuid, data, skin, updated) VALUES (?, ?, ?, ?)
+		 ON CONFLICT(uuid) DO UPDATE SET data = excluded.data, skin = excluded.skin, updated = excluded.updated
 		 WHERE updated < ?`
-	).bind(auth.uuid, encrypted, now, now - 60).run();
+	).bind(auth.uuid, encrypted, skinVal, now, now - 60).run();
 
 	if (result.meta.changes === 0) {
 		return json({ error: 'Rate limited: wait 60 seconds between updates' }, 429);
@@ -201,7 +222,7 @@ async function handleProfileGet(uuid, request, env) {
 		return json({ error: 'Invalid UUID format' }, 400);
 	}
 
-	const row = await env.DB.prepare('SELECT data, updated FROM profiles WHERE uuid = ?')
+	const row = await env.DB.prepare('SELECT data, skin, updated FROM profiles WHERE uuid = ?')
 		.bind(uuid).first();
 
 	if (!row) {
@@ -214,6 +235,7 @@ async function handleProfileGet(uuid, request, env) {
 	return json({
 		uuid,
 		data: decrypted,
+		skin: row.skin,
 		updated: row.updated,
 		verified: isVerified
 	});
@@ -322,13 +344,25 @@ async function hmacSha256(data, key) {
 
 async function verifyEd25519(publicKeyB64, message, signatureB64) {
 	try {
-		const publicKey = await crypto.subtle.importKey(
-			'raw',
-			base64ToBytes(publicKeyB64),
-			{ name: 'Ed25519' },
-			false,
-			['verify']
-		);
+		const keyData = base64ToBytes(publicKeyB64);
+		let publicKey;
+		try {
+			publicKey = await crypto.subtle.importKey(
+				'spki',
+				keyData,
+				{ name: 'Ed25519' },
+				false,
+				['verify']
+			);
+		} catch {
+			publicKey = await crypto.subtle.importKey(
+				'raw',
+				keyData,
+				{ name: 'Ed25519' },
+				false,
+				['verify']
+			);
+		}
 		return await crypto.subtle.verify(
 			'Ed25519',
 			publicKey,
@@ -403,6 +437,30 @@ function sanitizeProfileText(text) {
 		.replace(/[\u200B-\u200D\uFEFF]/g, '')
 		.replace(/[\u202A-\u202E]/g, '')
 		.replace(/(.)\1{4,}/g, '$1$1$1$1');
+}
+
+async function handlePublicProfileGet(uuid, env) {
+	if (!isValidUuid(uuid)) {
+		return json({ error: 'Invalid UUID format' }, 400);
+	}
+
+	const row = await env.DB.prepare('SELECT data, skin, updated FROM profiles WHERE uuid = ?')
+		.bind(uuid).first();
+
+	if (!row) {
+		return json({ error: 'Profile not found' }, 404);
+	}
+
+	const decrypted = await decryptProfile(row.data, env.AES_KEY);
+	const isVerified = isUuidV4(uuid);
+
+	return json({
+		uuid,
+		data: decrypted,
+		skin: row.skin,
+		updated: row.updated,
+		verified: isVerified
+	});
 }
 
 function json(data, status = 200) {
