@@ -14,10 +14,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.fabricmc.loader.api.FabricLoader;
 
-/**
- * Проверка обновлений через GitHub Releases. Схема совпадает с update.json:
- * {"version","file","sha256"}. Если update.json нет, берём версию из тега.
- */
 public final class UpdateChecker {
 
     private static final String LATEST_RELEASE =

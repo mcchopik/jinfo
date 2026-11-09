@@ -5,12 +5,6 @@ import java.lang.reflect.Method;
 import java.util.Optional;
 import java.util.UUID;
 
-/**
- * Best-effort доступ к текущей сессии Minecraft через рефлексию.
- * Так мы не завязываемся на конкретные имена API (они отличаются между версиями)
- * и не выдумываем методы. Если что-то не найдено — возвращаем пусто,
- * и мод использует offline-авторизацию.
- */
 public final class MinecraftSession {
 
     public record SessionInfo(String accessToken, String uuid, String username) {
@@ -50,11 +44,6 @@ public final class MinecraftSession {
         }
     }
 
-    /**
-     * Ник текущего игрока. В offline/пиратке сессия часто пустая, поэтому сначала
-     * смотрим на локального игрока в мире (getName/getGameProfile), затем сессию,
-     * затем пользователя лаунчера.
-     */
     public static Optional<String> currentUsername() {
         try {
             Object client = clientInstance();
@@ -62,7 +51,6 @@ public final class MinecraftSession {
                 return Optional.empty();
             }
 
-            // 1) Локальный игрок в мире — самый надёжный источник ника.
             Object player = field(client, "player");
             if (player == null) {
                 player = invokeAny(client, "getPlayer", "player");
@@ -72,14 +60,12 @@ public final class MinecraftSession {
                 return Optional.of(fromPlayer);
             }
 
-            // 2) Сессия (у лицензии ник есть и здесь).
             Object session = invoke(client, "getSession");
             String fromSession = asString(invoke(session, "getUsername"));
             if (valid(fromSession)) {
                 return Optional.of(fromSession.trim());
             }
 
-            // 3) Пользователь лаунчера.
             Object user = invokeAny(client, "getUser");
             String fromUser = usernameOf(user);
             if (fromUser != null) {

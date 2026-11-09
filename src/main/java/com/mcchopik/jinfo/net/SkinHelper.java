@@ -3,10 +3,6 @@ package com.mcchopik.jinfo.net;
 import java.lang.reflect.Method;
 import net.minecraft.resources.Identifier;
 
-/**
- * Best-effort получение текстуры скина через рефлексию.
- * Возвращает Identifier или null, если текстуру получить не удалось.
- */
 public final class SkinHelper {
 
     private SkinHelper() {

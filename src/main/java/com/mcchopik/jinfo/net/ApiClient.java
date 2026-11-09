@@ -19,10 +19,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
 
-/**
- * Сетевой клиент Worker'а (Cloudflare) на JDK HttpClient.
- * Умеет оба способа авторизации, хранит токен, кэширует профили в памяти.
- */
 public final class ApiClient {
 
     public static final String DEFAULT_BASE_URL = "https://mcprofiles.mcchopik.workers.dev";
@@ -30,7 +26,6 @@ public final class ApiClient {
             "https://sessionserver.mojang.com/session/minecraft/join";
     private static final Duration TIMEOUT = Duration.ofSeconds(5);
 
-    /** Ссылка на профиль в батч-ответе. */
     public record ProfileRef(long updated, boolean verified) {
     }
 
@@ -68,15 +63,6 @@ public final class ApiClient {
         return cache;
     }
 
-    // ------------------------------------------------------------------
-    // Авторизация
-    // ------------------------------------------------------------------
-
-    /**
-     * Пытается войти как лицензионный аккаунт (если есть сессия Minecraft),
-     * иначе — как offline-аккаунт. Всегда возвращает результат либо бросает
-     * ApiException (например, 429 или нет сети).
-     */
     public AuthResult login(String username) throws ApiException {
         Optional<MinecraftSession.SessionInfo> session = MinecraftSession.current();
         if (session.isPresent()) {
@@ -86,7 +72,7 @@ public final class ApiClient {
                 if (e.isRateLimited()) {
                     throw e;
                 }
-                // сессия могла быть невалидной — пробуем offline
+
             }
         }
         return loginOffline(username);
@@ -137,10 +123,6 @@ public final class ApiClient {
             throw new ApiException(r.status(), "Mojang join failed: " + r.status());
         }
     }
-
-    // ------------------------------------------------------------------
-    // Профиль
-    // ------------------------------------------------------------------
 
     public void putProfile(String data) throws ApiException {
         String token = requireToken();
@@ -215,10 +197,6 @@ public final class ApiClient {
     public OfflineKeyStore keyStore() {
         return keyStore;
     }
-
-    // ------------------------------------------------------------------
-    // Низкий уровень
-    // ------------------------------------------------------------------
 
     private record HttpResult(int status, String body) {
     }
@@ -329,9 +307,6 @@ public final class ApiClient {
         return sb.toString();
     }
 
-    /**
-     * Собирает UUID из ответа (для логирования/использования в списках).
-     */
     public List<String> knownUuids() {
         List<String> list = new ArrayList<>();
         String uuid = tokenStore.uuid();

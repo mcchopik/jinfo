@@ -7,9 +7,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-/**
- * Простой конфиг мода: жест Shift+ПКМ и язык интерфейса.
- */
 public final class JInfoConfig {
 
     private static Path file;

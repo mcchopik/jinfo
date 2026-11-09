@@ -4,10 +4,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import net.minecraft.network.chat.Component;
 
-/**
- * Отправка сообщения в чат клиента без завязки на конкретные имена методов
- * (они отличаются между маппингами). Если ничего не нашлось — тихо пропускаем.
- */
 public final class ClientChat {
 
     private static final String[] PLAYER_FIELDS = {"player"};

@@ -1,9 +1,5 @@
 package com.mcchopik.jinfo.text;
 
-/**
- * Готовые шаблоны профиля на ru/uk/en. Тексты короткие и укладываются в лимиты
- * (500 символов, 10 строк, 6 ссылок). Ники в шаблонах — заглушки @mynick.
- */
 public enum ProfileTemplates {
 
     STREAMER("streamer",

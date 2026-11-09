@@ -29,10 +29,6 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Util;
 
-/**
- * Клиентская команда /jinfo со всеми подкомандами и справкой.
- * Сетевые запросы выполняются в фоновом потоке, ответы показываются в чате.
- */
 public final class JInfoCommand {
 
     private static final TextParser PARSER = new TextParser();
@@ -95,10 +91,6 @@ public final class JInfoCommand {
                 )
         );
     }
-
-    // ------------------------------------------------------------------
-    // Подкоманды
-    // ------------------------------------------------------------------
 
     private static int help(FabricClientCommandSource src) {
         for (String line : Messages.s("help").split("\n", -1)) {
@@ -312,7 +304,7 @@ public final class JInfoCommand {
                     try {
                         Util.getPlatform().openUri(URI.create(url));
                     } catch (Throwable ignored) {
-                        // браузер не открылся — покажем ссылку в чате
+
                     }
                 });
                 reply(src, "Веб-редактор: " + url);
@@ -329,10 +321,6 @@ public final class JInfoCommand {
         reply(src, "Веб-сервер остановлен.");
         return 1;
     }
-
-    // ------------------------------------------------------------------
-    // Вспомогательное
-    // ------------------------------------------------------------------
 
     private static void showProfile(FabricClientCommandSource src, ProfileData data) {
         ParsedProfile parsed = PARSER.parse(data.data(), JInfoConfig.language());

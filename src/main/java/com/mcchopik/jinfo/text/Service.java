@@ -3,11 +3,6 @@ package com.mcchopik.jinfo.text;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Реестр поддерживаемых сервисов в одном месте: ключ, цвет, шаблон ссылки,
- * разрешённые домены и подписи для ru/uk/en.
- * Чтобы добавить сервис — добавь одну константу сюда.
- */
 public enum Service {
     YOUTUBE(
             "youtube", "#FF0000", "https://youtube.com/@%s",

@@ -8,9 +8,6 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
-/**
- * Выбор готового шаблона профиля. Заменяет текст в редакторе.
- */
 public class JInfoTemplateScreen extends Screen {
 
     private final JInfoEditorScreen editor;

@@ -1,8 +1,5 @@
 package com.mcchopik.jinfo.text;
 
-/**
- * Стиль фрагмента текста: цвет (hex или null) и начертания.
- */
 public record Style(String colorHex, boolean bold, boolean italic, boolean underline, boolean strikethrough) {
 
     public static final Style DEFAULT = new Style(null, false, false, false, false);

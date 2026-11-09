@@ -1,8 +1,5 @@
 package com.mcchopik.jinfo.text;
 
-/**
- * Язык подписей сервисов. По умолчанию — русский.
- */
 public enum Lang {
     RU("ru"),
     UK("uk"),

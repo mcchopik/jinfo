@@ -10,10 +10,6 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Util;
 
-/**
- * Диалог подтверждения перехода по ссылке. Ссылка никогда не открывается
- * автоматически — только после явного нажатия «Открыть».
- */
 public class LinkConfirmScreen extends Screen {
 
     private final String url;

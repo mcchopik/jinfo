@@ -20,10 +20,6 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 
-/**
- * Полный профиль игрока: голова, ник, текст и кнопки сервисов.
- * Ссылки никогда не открываются автоматически — сначала диалог подтверждения.
- */
 public class JInfoProfileScreen extends Screen {
 
     private static final int HEAD = 32;

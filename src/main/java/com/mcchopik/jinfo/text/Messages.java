@@ -4,10 +4,6 @@ import com.mcchopik.jinfo.config.JInfoConfig;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Строки интерфейса на ru/uk/en. Язык берётся из конфига мода.
- * Команда /jinfo и часть старых экранов пока остаются на русском.
- */
 public final class Messages {
 
     private static final Map<String, String[]> DICT = new HashMap<>();

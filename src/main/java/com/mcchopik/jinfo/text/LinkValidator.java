@@ -8,9 +8,6 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-/**
- * Проверка безопасности ссылок. Зависимостей от Minecraft нет.
- */
 public final class LinkValidator {
 
     private static final Pattern IPV4 = Pattern.compile(
@@ -24,9 +21,6 @@ public final class LinkValidator {
     private LinkValidator() {
     }
 
-    /**
-     * Результат проверки ссылки.
-     */
     public record Result(boolean valid, List<String> warnings) {
         public static Result invalid() {
             return new Result(false, List.of());
@@ -37,9 +31,6 @@ public final class LinkValidator {
         }
     }
 
-    /**
-     * Проверка ссылки для встроенного сервиса: домен обязан совпадать со списком.
-     */
     public static Result validateService(String url, Service service) {
         URI uri = parseHttps(url);
         if (uri == null) {
@@ -52,10 +43,6 @@ public final class LinkValidator {
         return Result.ok(List.of());
     }
 
-    /**
-     * Проверка произвольной ссылки {@code {link:...}}: любой https-домен,
-     * но с предупреждениями для сокращателей, punycode и IP.
-     */
     public static Result validateGeneric(String url) {
         URI uri = parseHttps(url);
         if (uri == null) {
@@ -78,10 +65,6 @@ public final class LinkValidator {
         return Result.ok(warnings);
     }
 
-    /**
-     * Приводит ввод к https URI или возвращает null, если ссылка недопустима:
-     * только https, без логина/пароля, без localhost и IP, без опасных схем.
-     */
     private static URI parseHttps(String raw) {
         if (raw == null) {
             return null;
@@ -151,7 +134,7 @@ public final class LinkValidator {
         if (IPV4.matcher(host).matches()) {
             return true;
         }
-        // IPv6 в квадратных скобках или с двоеточиями
+
         return host.contains(":") || (host.startsWith("[") && host.endsWith("]"));
     }
 }

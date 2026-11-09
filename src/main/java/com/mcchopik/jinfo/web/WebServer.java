@@ -25,10 +25,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-/**
- * Локальный веб-редактор: HttpServer только на 127.0.0.1, случайный порт,
- * секретный токен в пути. Один экземпляр одновременно.
- */
 public final class WebServer {
 
     private static final long IDLE_TIMEOUT_MS = 30L * 60L * 1000L;
@@ -150,10 +146,6 @@ public final class WebServer {
             watchdog.shutdownNow();
         }
     }
-
-    // ------------------------------------------------------------------
-    // HTTP
-    // ------------------------------------------------------------------
 
     private void handle(HttpExchange ex) throws IOException {
         lastRequest = System.currentTimeMillis();
@@ -298,10 +290,6 @@ public final class WebServer {
         }
         json(ex, out);
     }
-
-    // ------------------------------------------------------------------
-    // Вспомогательное
-    // ------------------------------------------------------------------
 
     private boolean validHost(String host) {
         if (host == null) {

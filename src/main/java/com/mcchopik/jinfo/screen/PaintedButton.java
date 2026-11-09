@@ -6,10 +6,6 @@ import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.input.InputWithModifiers;
 import net.minecraft.network.chat.Component;
 
-/**
- * Кнопка с произвольной отрисовкой (цвет сервиса, голова игрока и т.п.).
- * Отрисовка вынесена в {@link Painter}, чтобы не зависеть от типа шрифта.
- */
 public class PaintedButton extends AbstractButton {
 
     public interface Painter {

@@ -18,11 +18,6 @@ import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
-/**
- * Экран редактора профиля в игре.
- * Многострочность реализована стеком однострочных EditBox (по одной на строку),
- * чтобы не зависеть от нестабильных внутренних API. Сетевые операции — в фоне.
- */
 public class JInfoEditorScreen extends Screen {
 
     private static final int MAX_LINES = 10;
@@ -92,10 +87,6 @@ public class JInfoEditorScreen extends Screen {
         }
     }
 
-    // ------------------------------------------------------------------
-    // Построение виджетов
-    // ------------------------------------------------------------------
-
     private void capture() {
         for (int i = 0; i < lineBoxes.size() && i < lines.size(); i++) {
             lines.set(i, lineBoxes.get(i).getValue());
@@ -142,7 +133,6 @@ public class JInfoEditorScreen extends Screen {
         int bh = 14;
         int gap = 2;
 
-        // 16 цветов в 2 ряда по 8
         int cx = left;
         int cy = top;
         for (int i = 0; i < 16; i++) {
@@ -156,7 +146,6 @@ public class JInfoEditorScreen extends Screen {
         }
         int afterColors = top + 2 * (bh + gap) + 4;
 
-        // Стили
         String[][] styles = {
                 {"&l", "&l"}, {"&o", "&o"}, {"&n", "&n"}, {"&m", "&m"}, {"&r", "&r"}
         };
@@ -169,7 +158,6 @@ public class JInfoEditorScreen extends Screen {
         }
         int afterStyles = afterColors + bh + 4;
 
-        // Сервисы: по 5 в ряд
         int perRow = 5;
         int idx = 0;
         for (Service service : Service.values()) {
@@ -185,7 +173,6 @@ public class JInfoEditorScreen extends Screen {
         int serviceRows = (Service.values().length + perRow - 1) / perRow;
         int afterServices = afterStyles + serviceRows * (bh + gap) + 6;
 
-        // Действия
         int ay = afterServices;
         addRenderableWidget(Button.builder(Component.literal(Messages.s("editor_add_line")), b -> addLine())
                 .bounds(left, ay, 100, bh).build());
@@ -222,10 +209,6 @@ public class JInfoEditorScreen extends Screen {
             setStatus(Messages.s("editor_hex_invalid"), 0xFFFF5555);
         }
     }
-
-    // ------------------------------------------------------------------
-    // Логика текста
-    // ------------------------------------------------------------------
 
     private void addLine() {
         capture();
@@ -328,7 +311,7 @@ public class JInfoEditorScreen extends Screen {
                 ProfileData data = api.getProfile(uuid);
                 onClient(() -> setText(data.data()));
             } catch (Exception ignored) {
-                // Профиля ещё нет — начинаем с пустого листа.
+
             }
         });
     }
@@ -367,10 +350,6 @@ public class JInfoEditorScreen extends Screen {
         };
     }
 
-    // ------------------------------------------------------------------
-    // Рендер
-    // ------------------------------------------------------------------
-
     @Override
     public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
         graphics.fill(0, 0, width, height, 0xE6101418);
@@ -379,7 +358,6 @@ public class JInfoEditorScreen extends Screen {
                 + lines.size() + " / " + MAX_LINES + " " + Messages.s("editor_counter_lines");
         graphics.text(font, counter, MARGIN, 24, 0xFFAAAAAA, false);
 
-        // Рамка предпросмотра
         if (previewW > 20 && previewBottom > previewY) {
             graphics.fill(previewX - 4, previewY - 14, width - MARGIN, previewBottom, 0xAA1E242B);
             graphics.text(font, Messages.s("editor_preview"), previewX, previewY - 12, 0xFFFFFFFF, true);

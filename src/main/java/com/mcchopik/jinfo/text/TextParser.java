@@ -3,11 +3,6 @@ package com.mcchopik.jinfo.text;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Парсер текста профиля: коды цветов/стилей Minecraft, плейсхолдеры сервисов,
- * универсальные ссылки {@code {link:Название}}, проверка безопасности ссылок.
- * Не зависит от Minecraft — можно тестировать обычным JUnit.
- */
 public final class TextParser {
 
     private static final String[] COLOR_CODES = {
@@ -32,7 +27,6 @@ public final class TextParser {
         while (i < len) {
             char c = text.charAt(i);
 
-            // Коды форматирования & или §
             if ((c == '&' || c == '\u00A7') && i + 1 < len) {
                 FormatResult fmt = tryApplyFormatting(text, i, style);
                 if (fmt != null) {
@@ -43,7 +37,6 @@ public final class TextParser {
                 }
             }
 
-            // Плейсхолдер
             if (c == '{') {
                 PlaceholderResult ph = tryParsePlaceholder(text, i, language);
                 if (ph != null) {
@@ -89,18 +82,12 @@ public final class TextParser {
                 linkCount, text.length(), lineCount, plain, overLimits);
     }
 
-    // Временная переменная для передачи нового стиля из tryApplyFormatting
     private record FormatResult(int consumed, Style style) {
     }
 
-    /**
-     * Пытается применить код форматирования в позиции i.
-     * Возвращает null, если это не код.
-     */
     private FormatResult tryApplyFormatting(String text, int i, Style current) {
         char n = Character.toLowerCase(text.charAt(i + 1));
 
-        // Hex: &#RRGGBB или §#RRGGBB
         if (n == '#' && i + 7 < text.length()) {
             String hex = text.substring(i + 2, i + 8);
             if (hex.matches("[0-9a-fA-F]{6}")) {
@@ -129,7 +116,7 @@ public final class TextParser {
                 return new FormatResult(2, Style.DEFAULT);
             }
             case 'k' -> {
-                // Обфускация запрещена — код просто игнорируем.
+
                 return new FormatResult(2, current);
             }
             default -> {
@@ -141,16 +128,12 @@ public final class TextParser {
     private record PlaceholderResult(Part.Link validLink, String literal, int nextIndex) {
     }
 
-    /**
-     * Разбирает плейсхолдер, начинающийся с '{' в позиции i.
-     * Возвращает null, если это не плейсхолдер (обычная скобка).
-     */
     private PlaceholderResult tryParsePlaceholder(String text, int i, Lang lang) {
         int close = text.indexOf('}', i + 1);
         if (close < 0) {
             return null;
         }
-        // Ограничим длину содержимого, чтобы не парсить мусор
+
         if (close - i > 80) {
             return null;
         }
@@ -162,10 +145,9 @@ public final class TextParser {
         boolean universal = content.toLowerCase().startsWith("link:");
         Service service = universal ? null : Service.byKey(content);
         if (!universal && service == null) {
-            return null; // неизвестный ключ — оставляем как обычный текст
+            return null;
         }
 
-        // Читаем аргумент после '}'
         int argStart = close + 1;
         int p = argStart;
         while (p < text.length() && (text.charAt(p) == ' ' || text.charAt(p) == '\t')) {
@@ -177,7 +159,7 @@ public final class TextParser {
         }
         String arg = text.substring(tokenStart, p);
         if (arg.isEmpty()) {
-            // Нет аргумента — показываем плейсхолдер как обычный текст
+
             return new PlaceholderResult(null, text.substring(i, close + 1), close + 1);
         }
 
@@ -197,7 +179,6 @@ public final class TextParser {
             return new PlaceholderResult(link, null, p);
         }
 
-        // Встроенный сервис
         String url;
         if (arg.toLowerCase().startsWith("https://") || arg.toLowerCase().startsWith("http://")) {
             url = arg;
@@ -242,9 +223,6 @@ public final class TextParser {
         return sb.toString();
     }
 
-    /**
-     * Очистка от управляющих/невидимых символов, bidi-override и длинных повторов.
-     */
     public static String sanitize(String raw) {
         if (raw == null) {
             return "";
@@ -258,26 +236,26 @@ public final class TextParser {
                 continue;
             }
             if (c < 0x20 || c == 0x7F) {
-                continue; // управляющие
+                continue;
             }
             if (c >= '\u200B' && c <= '\u200D') {
-                continue; // zero-width
+                continue;
             }
             if (c == '\uFEFF' || c == '\u2060') {
                 continue;
             }
             if (c >= '\u202A' && c <= '\u202E') {
-                continue; // bidi override
+                continue;
             }
             if (c >= '\u2066' && c <= '\u2069') {
-                continue; // bidi isolates
+                continue;
             }
             if (c == '\u200E' || c == '\u200F') {
                 continue;
             }
             out.append(c);
         }
-        // Ограничим повторы одного символа до 4 подряд
+
         String collapsed = out.toString().replaceAll("(.)\\1{4,}", "$1$1$1$1");
         return collapsed;
     }

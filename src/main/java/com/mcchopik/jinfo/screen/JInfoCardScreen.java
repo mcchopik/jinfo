@@ -16,10 +16,6 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 
-/**
- * Компактная карточка игрока (Shift+ПКМ). Голова из скина (best-effort),
- * при наведении — подсказка с оформленным текстом профиля (некликабельная).
- */
 public class JInfoCardScreen extends Screen {
 
     private static final int PANEL_W = 200;

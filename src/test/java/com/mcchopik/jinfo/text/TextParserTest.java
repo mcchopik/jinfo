@@ -57,7 +57,7 @@ class TextParserTest {
         ParsedProfile p = parser.parse("&kСекрет", Lang.RU);
         Part.Text t = (Part.Text) p.parts().get(0);
         assertEquals("Секрет", t.text());
-        // никакого флага обфускации нет — просто обычный текст
+
         assertFalse(t.style().bold());
     }
 

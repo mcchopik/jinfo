@@ -16,10 +16,6 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 
-/**
- * Локальная пара ключей Ed25519 для offline-аккаунтов.
- * Приватный ключ не покидает устройство и никуда не отправляется.
- */
 public final class OfflineKeyStore {
 
     private final Path file;
@@ -30,11 +26,6 @@ public final class OfflineKeyStore {
         this.file = file;
     }
 
-    /**
-     * Загружает пару ключей из файла или создаёт новую.
-     *
-     * @return true, если ключ был создан впервые
-     */
     public boolean loadOrCreate() {
         if (load()) {
             return false;
@@ -92,9 +83,6 @@ public final class OfflineKeyStore {
         return publicKeyBase64;
     }
 
-    /**
-     * Подписывает сообщение и возвращает Base64-подпись.
-     */
     public String signBase64(String message) {
         try {
             Signature sig = Signature.getInstance("Ed25519");

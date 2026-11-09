@@ -23,8 +23,6 @@ dependencies {
     implementation "net.fabricmc:fabric-loader:${project.loader_version}"
     implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
 
-    // Mod Menu is optional: compileOnly + "modmenu" entrypoint means the class is
-    // never loaded unless Mod Menu is installed.
     compileOnly "com.terraformersmc:modmenu:${project.modmenu_version}"
 
     testImplementation platform("org.junit:junit-bom:5.12.2")

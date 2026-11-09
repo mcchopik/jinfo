@@ -2,17 +2,12 @@ package com.mcchopik.jinfo.text;
 
 import java.util.List;
 
-/**
- * Превращает {@link ParsedProfile}/{@link Part} в безопасный HTML.
- * Не использует inline-style (важно для строгого CSP): цвет — тегом &lt;font&gt;,
- * начертания — семантическими тегами. Сервисные кнопки — классы, стили в CSS страницы.
- */
 public final class HtmlRenderer {
 
     public enum Mode {
-        /** Подсказка при наведении: без кнопок, ссылки не кликабельны. */
+
         TOOLTIP,
-        /** Полный профиль: сервисные кнопки с цветом (клик обрабатывает JS страницы). */
+
         FULL
     }
 

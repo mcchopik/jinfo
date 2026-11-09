@@ -16,10 +16,6 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Util;
 
-/**
- * Настройки мода: жест Shift+ПКМ, язык (ru/uk/en) и быстрые действия.
- * Открывается командой /jinfo settings и из Mod Menu — всё кнопками.
- */
 public class JInfoSettingsScreen extends Screen {
 
     private final Screen parent;

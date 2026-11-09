@@ -5,11 +5,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import java.util.UUID;
 
-/**
- * Определение UUID по нику.
- * Сначала пытаемся найти игрока в списке подключённых (рефлексия, best-effort),
- * иначе считаем offline-UUID (UUID v3 от "OfflinePlayer:<ник>") — так же, как сервер.
- */
 public final class PlayerResolver {
 
     private PlayerResolver() {

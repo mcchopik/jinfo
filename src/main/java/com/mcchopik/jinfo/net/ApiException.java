@@ -1,8 +1,5 @@
 package com.mcchopik.jinfo.net;
 
-/**
- * Ошибка обращения к Worker или к серверу Mojang.
- */
 public class ApiException extends Exception {
 
     private final int statusCode;

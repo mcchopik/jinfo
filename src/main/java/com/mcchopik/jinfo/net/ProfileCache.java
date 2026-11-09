@@ -5,9 +5,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 
-/**
- * Кэш профилей в памяти: LRU на 200 записей, TTL 10 минут.
- */
 public final class ProfileCache {
 
     private static final int MAX_ENTRIES = 200;

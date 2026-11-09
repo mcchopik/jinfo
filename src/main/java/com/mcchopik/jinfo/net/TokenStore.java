@@ -7,10 +7,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-/**
- * Хранит токен доступа (uuid.expiry.hmac) и UUID на диске.
- * Срок действия берётся из самого токена.
- */
 public final class TokenStore {
 
     private final Path file;
@@ -50,7 +46,7 @@ public final class TokenStore {
             obj.addProperty("token", token);
             Files.writeString(file, obj.toString(), StandardCharsets.UTF_8);
         } catch (IOException ignored) {
-            // Не критично: токен просто не переживёт перезапуск.
+
         }
     }
 
@@ -71,9 +67,6 @@ public final class TokenStore {
         return token;
     }
 
-    /**
-     * Возвращает токен, если он есть и ещё не истёк, иначе null.
-     */
     public synchronized String validToken() {
         if (token == null) {
             return null;
