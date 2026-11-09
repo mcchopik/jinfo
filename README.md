@@ -107,3 +107,4 @@ Jar появится в `build/libs/`. CI использует Java 25 (Microsof
 ## Лицензия
 
 MIT.
+.
