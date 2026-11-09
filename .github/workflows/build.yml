@@ -1,9 +1,14 @@
 name: build
 
-on: [pull_request, push, workflow_dispatch]
+on:
+  push:
+    branches: [master]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   build:
@@ -22,17 +27,65 @@ jobs:
         uses: gradle/actions/setup-gradle@v6
       - name: make gradle wrapper executable
         run: chmod +x ./gradlew
+
+      # Тег v0.1beta собирает ровно эту версию; обычный push берёт mod_version
+      # из gradle.properties.
       - name: build
-        run: ./gradlew build
+        run: |
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            ./gradlew build -Pmod_version="${GITHUB_REF_NAME#v}"
+          else
+            ./gradlew build
+          fi
+
+      # Игрокам нужен только мод-jar, sources-jar не публикуем.
       - name: capture build artifacts
         uses: actions/upload-artifact@v7
         with:
           name: jinfo
           path: build/libs/jinfo-*.jar
           if-no-files-found: error
-      - name: publish release
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
+
+  release:
+    if: github.ref_type == 'tag'
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v6
+      - name: download artifact
+        uses: actions/download-artifact@v7
         with:
-          generate_release_notes: true
-          files: build/libs/jinfo-*.jar
+          name: jinfo
+          path: release-artifact
+
+      - name: publish release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          jar="release-artifact/jinfo-${version}.jar"
+
+          if [ ! -f "${jar}" ]; then
+            echo "::error::Expected ${jar}, but the artifact contains:"
+            ls -1 release-artifact
+            exit 1
+          fi
+
+          sha="$(sha256sum "${jar}" | cut -d' ' -f1)"
+          printf '{\n  "version": "%s",\n  "file": "jinfo-%s.jar",\n  "sha256": "%s"\n}\n' \
+            "${version}" "${version}" "${sha}" > update.json
+
+          notes=".github/release-notes/${version}.md"
+          if [ -f "${notes}" ]; then
+            gh release create "${GITHUB_REF_NAME}" "${jar}" update.json \
+              --title "jinfo ${version}" \
+              --notes-file "${notes}"
+          else
+            gh release create "${GITHUB_REF_NAME}" "${jar}" update.json \
+              --title "jinfo ${version}" \
+              --generate-notes
+          fi

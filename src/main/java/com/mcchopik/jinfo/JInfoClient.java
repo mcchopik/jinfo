@@ -3,12 +3,15 @@ package com.mcchopik.jinfo;
 import com.mcchopik.jinfo.command.JInfoCommand;
 import com.mcchopik.jinfo.config.JInfoConfig;
 import com.mcchopik.jinfo.net.ApiClient;
+import com.mcchopik.jinfo.net.ClientChat;
 import com.mcchopik.jinfo.net.MinecraftSession;
 import com.mcchopik.jinfo.net.PlayerResolver;
+import com.mcchopik.jinfo.net.UpdateChecker;
 import com.mcchopik.jinfo.screen.JInfoCardScreen;
 import com.mcchopik.jinfo.screen.JInfoProfileScreen;
 import com.mcchopik.jinfo.web.WebServer;
 import java.nio.file.Path;
+import java.util.concurrent.CompletableFuture;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -31,6 +34,7 @@ public class JInfoClient implements ClientModInitializer {
     private static final KeyMapping.Category KEY_CATEGORY = KeyMapping.Category.register(
             Identifier.fromNamespaceAndPath("jinfo", "main"));
     private static KeyMapping openProfileKey;
+    private static boolean updatesChecked;
 
     public static ApiClient api() {
         return api;
@@ -46,6 +50,7 @@ public class JInfoClient implements ClientModInitializer {
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> WebServer.stop("world"));
         registerGesture();
         registerKeybind();
+        ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> checkUpdates());
         JInfoMod.LOGGER.info("JInfo client initialized (config: {})", configDir);
     }
 
@@ -57,6 +62,19 @@ public class JInfoClient implements ClientModInitializer {
                 openSelf(client);
             }
         });
+    }
+
+    private static void checkUpdates() {
+        if (updatesChecked) {
+            return;
+        }
+        updatesChecked = true;
+        CompletableFuture.runAsync(() -> UpdateChecker.check().ifPresent(info -> {
+            if (UpdateChecker.isNewer(info.version(), UpdateChecker.currentVersion())) {
+                String suffix = info.pageUrl() == null ? "" : " — " + info.pageUrl();
+                ClientChat.send("JInfo: доступна версия " + info.version() + suffix);
+            }
+        }));
     }
 
     private void openSelf(Minecraft client) {

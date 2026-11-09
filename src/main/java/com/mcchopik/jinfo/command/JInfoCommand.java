@@ -6,6 +6,7 @@ import com.mcchopik.jinfo.net.ApiException;
 import com.mcchopik.jinfo.net.MinecraftSession;
 import com.mcchopik.jinfo.net.PlayerResolver;
 import com.mcchopik.jinfo.net.ProfileData;
+import com.mcchopik.jinfo.net.UpdateChecker;
 import com.mcchopik.jinfo.screen.JInfoEditorScreen;
 import com.mcchopik.jinfo.screen.JInfoSettingsScreen;
 import com.mcchopik.jinfo.text.ParsedProfile;
@@ -15,6 +16,7 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import java.net.URI;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
@@ -67,6 +69,7 @@ public final class JInfoCommand {
                             });
                             return 1;
                         }))
+                        .then(lit("update").executes(ctx -> update(ctx.getSource())))
                         .then(lit("me").executes(ctx -> me(ctx.getSource(), api)))
                         .then(lit("clear").executes(ctx -> clear(ctx.getSource(), api)))
                         .then(lit("view").then(arg("name", StringArgumentType.word())
@@ -89,6 +92,7 @@ public final class JInfoCommand {
         reply(src, "/jinfo edit — открыть редактор в игре");
         reply(src, "/jinfo web — открыть редактор в браузере");
         reply(src, "/jinfo settings — язык и жест Shift+ПКМ");
+        reply(src, "/jinfo update — проверить обновления");
         reply(src, "/jinfo set <текст> — быстро задать текст");
         reply(src, "/jinfo me — показать мой профиль");
         reply(src, "/jinfo view <ник> — профиль игрока");
@@ -104,6 +108,26 @@ public final class JInfoCommand {
         reply(src, "&0-&9, &a-&f — цвета; &l жирный; &o курсив; &n подчёркнутый;");
         reply(src, "&m зачёркнутый; &r сброс; hex: &#RRGGBB; &k запрещён.");
         reply(src, "Лимиты: 500 символов, 10 строк, до 6 ссылок.");
+        return 1;
+    }
+
+    private static int update(FabricClientCommandSource src) {
+        reply(src, "Проверяю обновления...");
+        CompletableFuture.runAsync(() -> {
+            Optional<UpdateChecker.UpdateInfo> info = UpdateChecker.check();
+            if (info.isEmpty()) {
+                reply(src, "Релизов пока нет или GitHub недоступен.");
+                return;
+            }
+            UpdateChecker.UpdateInfo u = info.get();
+            String current = UpdateChecker.currentVersion();
+            if (UpdateChecker.isNewer(u.version(), current)) {
+                String suffix = u.pageUrl() == null ? "" : " " + u.pageUrl();
+                reply(src, "Доступна версия " + u.version() + " (у вас " + current + ")." + suffix);
+            } else {
+                reply(src, "У вас последняя версия (" + current + ").");
+            }
+        });
         return 1;
     }
 
