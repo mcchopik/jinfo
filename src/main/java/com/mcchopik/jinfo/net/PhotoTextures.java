@@ -51,7 +51,7 @@ public final class PhotoTextures {
             try {
                 HttpRequest request = HttpRequest.newBuilder(URI.create(url))
                         .timeout(Duration.ofSeconds(10))
-                        .header("User-Agent", "jinfo/0.2beta")
+                        .header("User-Agent", "jinfo/0.2.1beta")
                         .header("Accept", "image/*")
                         .GET()
                         .build();
