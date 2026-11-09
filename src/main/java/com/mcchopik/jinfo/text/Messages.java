@@ -55,6 +55,10 @@ public final class Messages {
                 "Profile photo updated.");
         put("photo_removed", "Фото профиля убрано.", "Фото профілю прибрано.",
                 "Profile photo removed.");
+        put("layer_hat", "Шляпа", "Капелюх", "Hat");
+        put("layer_jacket", "Куртка", "Куртка", "Jacket");
+        put("layer_sleeves", "Рукава", "Рукави", "Sleeves");
+        put("layer_pants", "Штаны", "Штани", "Pants");
         put("template_hint", "Выбери шаблон — он заменит текст редактора.",
                 "Обери шаблон — він замінить текст редактора.",
                 "Pick a template — it will replace the editor text.");
@@ -120,7 +124,7 @@ public final class Messages {
                         + "{youtube}, {twitch}, {discord}, {telegram}, {tiktok}, {instagram}, {x}, {github}, {steam}, {vk}, {reddit}, {kick}, {boosty}, {donationalerts}, {modrinth}\n"
                         + "После плейсхолдера — @ник или ссылка. Пример: {youtube} @nick\n"
                         + "Универсально: {link:Название} https://example.com\n"
-                        + "Фото: {avatar} https://example.com/photo.png\n"
+                        + "Фото: {photo} https://example.com/photo.png\n"
                         + "Цвета: &0-&f, &l &o &n &m &r, hex &#RRGGBB; &k запрещён.\n"
                         + "Лимиты: 500 символов, 10 строк, 6 ссылок.",
                 "=== JInfo — профіль гравця ===\n"
@@ -140,7 +144,7 @@ public final class Messages {
                         + "{youtube}, {twitch}, {discord}, {telegram}, {tiktok}, {instagram}, {x}, {github}, {steam}, {vk}, {reddit}, {kick}, {boosty}, {donationalerts}, {modrinth}\n"
                         + "Після плейсхолдера — @нік або посилання. Приклад: {youtube} @nick\n"
                         + "Універсально: {link:Назва} https://example.com\n"
-                        + "Фото: {avatar} https://example.com/photo.png\n"
+                        + "Фото: {photo} https://example.com/photo.png\n"
                         + "Кольори: &0-&f, &l &o &n &m &r, hex &#RRGGBB; &k заборонено.\n"
                         + "Ліміти: 500 символів, 10 рядків, 6 посилань.",
                 "=== JInfo — player profile ===\n"
@@ -160,7 +164,7 @@ public final class Messages {
                         + "{youtube}, {twitch}, {discord}, {telegram}, {tiktok}, {instagram}, {x}, {github}, {steam}, {vk}, {reddit}, {kick}, {boosty}, {donationalerts}, {modrinth}\n"
                         + "After a placeholder put @nick or a link. Example: {youtube} @nick\n"
                         + "Generic: {link:Title} https://example.com\n"
-                        + "Photo: {avatar} https://example.com/photo.png\n"
+                        + "Photo: {photo} https://example.com/photo.png\n"
                         + "Colours: &0-&f, &l &o &n &m &r, hex &#RRGGBB; &k is not allowed.\n"
                         + "Limits: 500 characters, 10 lines, 6 links.");
     }

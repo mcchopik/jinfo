@@ -1,29 +1,35 @@
 package com.mcchopik.jinfo.screen;
 
+import com.mcchopik.jinfo.config.JInfoConfig;
 import com.mcchopik.jinfo.net.ApiClient;
 import com.mcchopik.jinfo.net.ApiException;
-import com.mcchopik.jinfo.net.ProfileData;
 import com.mcchopik.jinfo.net.MinecraftSession;
 import com.mcchopik.jinfo.net.PhotoTextures;
-import com.mcchopik.jinfo.net.SkinHelper;
-import com.mcchopik.jinfo.text.Lang;
+import com.mcchopik.jinfo.net.ProfileData;
 import com.mcchopik.jinfo.text.Messages;
 import com.mcchopik.jinfo.text.ParsedProfile;
 import com.mcchopik.jinfo.text.Part;
 import com.mcchopik.jinfo.text.Service;
 import com.mcchopik.jinfo.text.TextParser;
+import com.mojang.authlib.GameProfile;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Supplier;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
+import net.minecraft.world.entity.player.PlayerSkin;
 
 public class JInfoProfileScreen extends Screen {
 
-    private static final int HEAD = 32;
+    private static final int GAP = 12;
+    private static final int PHOTO = 56;
+    private static final int LAYER_H = 15;
 
     private final ApiClient api;
     private final String uuid;
@@ -32,24 +38,32 @@ public class JInfoProfileScreen extends Screen {
     private final Screen parent;
     private final TextParser parser = new TextParser();
 
-    private Identifier skin;
-    private PhotoTextures.Photo photo;
     private ParsedProfile parsed;
+    private PhotoTextures.Photo photo;
+    private SkinViewer skinViewer;
     private String statusText = Messages.s("loading");
     private int statusColor = 0xFFAAAAAA;
     private boolean verified = false;
+    private boolean loading = true;
+
+    private boolean hat = true;
+    private boolean jacket = true;
+    private boolean sleeves = true;
+    private boolean pants = true;
 
     private int panelX;
     private int panelY;
     private int panelW;
     private int panelH;
-    private int headX;
-    private int headY;
+    private int viewerX;
+    private int viewerY;
+    private int viewerW;
+    private int viewerH;
+    private int infoX;
+    private int infoW;
     private int linksX;
     private int linksY;
     private int linksMaxW;
-
-    private boolean loading = true;
 
     public JInfoProfileScreen(ApiClient api, String uuid, String playerName,
                               Object skinSource, Screen parent) {
@@ -63,16 +77,23 @@ public class JInfoProfileScreen extends Screen {
 
     @Override
     protected void init() {
-        panelW = Math.min(width - 20, 400);
-        panelH = Math.min(height - 20, 240);
+        panelW = Math.min(width - 20, 460);
+        panelH = Math.min(height - 20, 300);
         panelX = (width - panelW) / 2;
         panelY = (height - panelH) / 2;
-        headX = panelX + (panelW - HEAD) / 2;
-        headY = panelY + 10;
-        linksX = panelX + 12;
-        linksMaxW = panelW - 24;
-        skin = skinSource == null ? null : SkinHelper.texture(skinSource);
 
+        viewerW = Math.min(120, Math.max(90, panelW / 3));
+        int layersHeight = 4 * LAYER_H + 3 * 4;
+        viewerH = Math.min(170, Math.max(80, panelH - 24 - layersHeight - 20));
+        viewerX = panelX + GAP;
+        viewerY = panelY + GAP;
+        infoX = viewerX + viewerW + GAP;
+        infoW = Math.max(80, panelX + panelW - GAP - infoX);
+        linksX = infoX;
+        linksMaxW = infoW;
+        linksY = panelY + 136;
+
+        skinViewer = createSkinViewer();
         setWidgets();
 
         if (loading) {
@@ -80,19 +101,93 @@ public class JInfoProfileScreen extends Screen {
         }
     }
 
+    private SkinViewer createSkinViewer() {
+        try {
+            Minecraft client = Minecraft.getInstance();
+            if (client == null || client.getEntityModels() == null) {
+                return null;
+            }
+            SkinViewer viewer = new SkinViewer(viewerW, viewerH, playerName,
+                    skinSupplier(), client.getEntityModels());
+            viewer.setX(viewerX);
+            viewer.setY(viewerY);
+            return viewer;
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    private Supplier<PlayerSkin> skinSupplier() {
+        if (skinSource instanceof AbstractClientPlayer player) {
+            return player::getSkin;
+        }
+        try {
+            Minecraft client = Minecraft.getInstance();
+            if (client == null) {
+                return () -> null;
+            }
+            String id = uuid == null ? "" : uuid.replace("-", "");
+            if (id.length() != 32) {
+                return () -> null;
+            }
+            UUID real = new UUID(Long.parseUnsignedLong(id.substring(0, 16), 16),
+                    Long.parseUnsignedLong(id.substring(16), 16));
+            GameProfile profile = new GameProfile(real, playerName);
+            return client.getSkinManager().createLookup(profile, true);
+        } catch (Throwable t) {
+            return () -> null;
+        }
+    }
+
     private void setWidgets() {
         clearWidgets();
+
+        if (skinViewer != null) {
+            addRenderableWidget(skinViewer);
+            int lw = viewerW;
+            int lx = viewerX;
+            int ly = viewerY + viewerH + 4;
+
+            addRenderableWidget(Button.builder(layerText("layer_hat", hat), b -> {
+                hat = !hat;
+                skinViewer.setLayer(hat, "hat");
+                b.setMessage(layerText("layer_hat", hat));
+            }).bounds(lx, ly, lw, LAYER_H).build());
+
+            addRenderableWidget(Button.builder(layerText("layer_jacket", jacket), b -> {
+                jacket = !jacket;
+                skinViewer.setLayer(jacket, "jacket");
+                b.setMessage(layerText("layer_jacket", jacket));
+            }).bounds(lx, ly + LAYER_H + 4, lw, LAYER_H).build());
+
+            addRenderableWidget(Button.builder(layerText("layer_sleeves", sleeves), b -> {
+                sleeves = !sleeves;
+                skinViewer.setLayer(sleeves, "right_sleeve", "left_sleeve");
+                b.setMessage(layerText("layer_sleeves", sleeves));
+            }).bounds(lx, ly + 2 * (LAYER_H + 4), lw, LAYER_H).build());
+
+            addRenderableWidget(Button.builder(layerText("layer_pants", pants), b -> {
+                pants = !pants;
+                skinViewer.setLayer(pants, "right_pants", "left_pants");
+                b.setMessage(layerText("layer_pants", pants));
+            }).bounds(lx, ly + 3 * (LAYER_H + 4), lw, LAYER_H).build());
+        }
+
         int by = panelY + panelH - 24;
         addRenderableWidget(Button.builder(Component.literal(Messages.s("close")), b -> onClose())
                 .bounds(panelX + panelW - 90, by, 78, 18)
                 .build());
         addRenderableWidget(Button.builder(Component.literal(Messages.s("report")), b -> report())
-                .bounds(panelX + 12, by, 100, 18)
+                .bounds(panelX + GAP, by, 100, 18)
                 .build());
 
         if (parsed != null) {
             buildLinkButtons();
         }
+    }
+
+    private Component layerText(String key, boolean enabled) {
+        return Component.literal(Messages.s(key) + (enabled ? " ✓" : " ✗"));
     }
 
     private void buildLinkButtons() {
@@ -103,7 +198,7 @@ public class JInfoProfileScreen extends Screen {
             }
         }
         int rx = linksX;
-        int ry = panelY + 138;
+        int ry = linksY;
         int bh = 18;
         for (Part.Link link : links) {
             String label = link.label() == null || link.label().isBlank()
@@ -133,7 +228,7 @@ public class JInfoProfileScreen extends Screen {
 
     private String serviceLabel(String key) {
         Service s = Service.byKey(key);
-        return s == null ? key : s.label(Lang.RU);
+        return s == null ? key : s.label(JInfoConfig.language());
     }
 
     private void openLink(Part.Link link) {
@@ -155,7 +250,7 @@ public class JInfoProfileScreen extends Screen {
                     }
                 }
                 ProfileData data = api.getProfile(uuid);
-                ParsedProfile p = parser.parse(data.data(), Lang.RU);
+                ParsedProfile p = parser.parse(data.data(), JInfoConfig.language());
                 onClient(() -> {
                     parsed = p;
                     photo = PhotoTextures.get(p.avatarUrl());
@@ -238,35 +333,44 @@ public class JInfoProfileScreen extends Screen {
         graphics.fill(panelX, panelY, panelX + panelW, panelY + panelH, 0xFF171B21);
         graphics.fill(panelX, panelY, panelX + panelW, panelY + 2, 0xFF2F74C9);
 
-        drawHead(graphics);
+        if (photo == null && parsed != null) {
+            photo = PhotoTextures.get(parsed.avatarUrl());
+        }
+        if (photo != null) {
+            int px = panelX + panelW - GAP - PHOTO;
+            int py = panelY + GAP;
+            graphics.blit(photo.id(), px, py, px + PHOTO, py + PHOTO,
+                    photo.u0(), photo.u1(), photo.v0(), photo.v1());
+        }
 
-        int nameW = font.width(playerName);
-        graphics.text(font, playerName, panelX + (panelW - nameW) / 2, headY + HEAD + 6,
-                0xFFFFFFFF, true);
+        int textW = photo != null ? Math.max(60, infoW - PHOTO - 8) : infoW;
+        String name = fit(playerName, textW);
+        graphics.text(font, name, infoX, panelY + 12, 0xFFFFFFFF, true);
 
         String icon = parsed == null ? "" : (verified ? "[✓]" : "[?]");
         if (!icon.isEmpty()) {
-            graphics.text(font, icon, panelX + (panelW + nameW) / 2 + 6, headY + HEAD + 6,
-                    verified ? 0xFF55FF55 : 0xFFFFAA00, false);
+            int nameW = font.width(name);
+            if (nameW + 12 <= textW) {
+                graphics.text(font, icon, infoX + nameW + 4, panelY + 12,
+                        verified ? 0xFF55FF55 : 0xFFFFAA00, false);
+            }
         }
 
-        int statusW = font.width(statusText);
-        graphics.text(font, statusText, panelX + (panelW - statusW) / 2, headY + HEAD + 20,
-                statusColor, false);
+        graphics.text(font, fit(statusText, textW), infoX, panelY + 26, statusColor, false);
 
         if (parsed != null) {
-            int y = panelY + 74;
-            int maxLines = 5;
+            int y = panelY + 44;
+            int maxLines = 8;
             List<String> lines = new ArrayList<>();
             for (String raw : parsed.plainText().split("\n", -1)) {
-                lines.addAll(wrap(raw, panelW - 24));
+                lines.addAll(wrap(raw, textW));
             }
             for (int i = 0; i < lines.size() && i < maxLines; i++) {
                 String line = lines.get(i);
                 if (i == maxLines - 1 && lines.size() > maxLines) {
                     line = line + "…";
                 }
-                graphics.text(font, line, panelX + 12, y, 0xFFE6E8EC, false);
+                graphics.text(font, line, infoX, y, 0xFFE6E8EC, false);
                 y += 10;
             }
         }
@@ -274,32 +378,18 @@ public class JInfoProfileScreen extends Screen {
         super.extractRenderState(graphics, mouseX, mouseY, delta);
     }
 
-    private void drawHead(GuiGraphicsExtractor graphics) {
-        if (photo == null && parsed != null) {
-            photo = PhotoTextures.get(parsed.avatarUrl());
+    private String fit(String text, int maxWidth) {
+        if (font.width(text) <= maxWidth) {
+            return text;
         }
-        if (photo != null) {
-            graphics.blit(photo.id(), headX, headY, headX + HEAD, headY + HEAD,
-                    photo.u0(), photo.u1(), photo.v0(), photo.v1());
-            return;
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < text.length(); i++) {
+            if (font.width(sb.toString() + text.charAt(i)) > maxWidth - 6) {
+                break;
+            }
+            sb.append(text.charAt(i));
         }
-        if (skin != null) {
-            float u0 = 8f / 64f;
-            float u1 = 16f / 64f;
-            float v0 = 8f / 64f;
-            float v1 = 16f / 64f;
-            graphics.blit(skin, headX, headY, headX + HEAD, headY + HEAD, u0, u1, v0, v1);
-            float hu0 = 40f / 64f;
-            float hu1 = 48f / 64f;
-            graphics.blit(skin, headX, headY, headX + HEAD, headY + HEAD, hu0, hu1, v0, v1);
-        } else {
-            graphics.fill(headX, headY, headX + HEAD, headY + HEAD, 0xFF2F74C9);
-            String initial = playerName.isEmpty() ? "?"
-                    : playerName.substring(0, 1).toUpperCase();
-            int iw = font.width(initial);
-            graphics.text(font, initial, headX + (HEAD - iw) / 2, headY + (HEAD - 8) / 2,
-                    0xFFFFFFFF, true);
-        }
+        return sb + "…";
     }
 
     private int parseColor(String hex) {

@@ -72,13 +72,13 @@
 
   function buildServices() {
     var container = document.getElementById("services");
-    var avatar = document.createElement("button");
-    avatar.type = "button";
-    avatar.className = "svc-avatar";
-    avatar.textContent = "avatar";
-    avatar.title = "{avatar} https://...";
-    avatar.addEventListener("click", function () { insertAtCursor("{avatar} "); });
-    container.appendChild(avatar);
+    var photo = document.createElement("button");
+    photo.type = "button";
+    photo.className = "svc-photo";
+    photo.textContent = "photo";
+    photo.title = "{photo} https://...";
+    photo.addEventListener("click", function () { insertAtCursor("{photo} "); });
+    container.appendChild(photo);
     SERVICES.forEach(function (key) {
       var b = document.createElement("button");
       b.type = "button";

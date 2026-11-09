@@ -1,11 +1,16 @@
 # JInfo — статус и заметки
 
 ## Краткий итог (сверху)
-- **Своё фото** — `{avatar} https://...` (и `{photo}`) в тексте профиля; парсер
-  складывает ссылку в `ParsedProfile.avatarUrl()`, игра скачивает картинку
-  (`PhotoTextures`, NativeImage + DynamicTexture, центр-кроп) и рисует вместо
-  головы в карточке/профиле; веб-редактор показывает `<img>` (CSP img-src https:),
-  кнопка «Фото» в редакторе и `/jinfo photo <url>` / `photo off` в командах.
+- **Своё фото** — `{photo} https://...` (поддерживается и `{avatar}`) в тексте профиля;
+  парсер складывает ссылку в `ParsedProfile.avatarUrl()`, игра скачивает картинку
+  (`PhotoTextures`, NativeImage + DynamicTexture, центр-кроп) и показывает её как
+  дополнение к информации в полном профиле; голова в карточке всегда из скина.
+  Веб-редактор показывает `<img>` (CSP img-src https:), кнопка «Фото» в редакторе
+  и `/jinfo photo <url>` / `photo off` в командах.
+- **3D-скин в полном профиле** — `SkinViewer` (`AbstractWidget`) на `Model.Simple` +
+  `ModelLayers.PLAYER/PLAYER_SLIM`, `GuiGraphicsExtractor.skin`: вращение мышью,
+  кнопки включения слоёв шляпы, куртки, рукавов и штанов; скин всегда соответствует
+  текущему скину игрока.
 - **Шаблоны/предпросмотр/Mod Menu** — `ProfileTemplates` (streamer/developer/gamer/simple,
   ru/uk/en), `/jinfo template <id>`, `/jinfo preview [ник]` (открывает полный экран),
   кнопка «Шаблоны» в редакторе (`JInfoTemplateScreen`), локализация редактора и `/jinfo help`
@@ -15,7 +20,7 @@
   локального игрока (`getName` → `getGameProfile` → `getScoreboardName`), затем сессию,
   затем пользователя лаунчера; `/jinfo web` и `/jinfo me` больше не падают с
   «не удалось определить ник». Открытие профиля по `P` использует v4-сессию, иначе offline UUID.
-- **Версия и апдейты** — `mod_version=0.1beta`; workflow по тегу `v*` собирает эту версию,
+- **Версия и апдейты** — `mod_version=0.2beta`; workflow по тегу `v*` собирает эту версию,
   создаёт GitHub Release с jar и `update.json` (version/file/sha256). В моде: проверка
   последнего релиза при входе (чат) и `/jinfo update`; сравнение версий, без автоустановки.
   Релиз-ноты: `.github/release-notes/<версия>.md`. Тег не создавался (нужно разрешение).

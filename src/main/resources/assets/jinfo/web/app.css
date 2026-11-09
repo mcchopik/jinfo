@@ -177,11 +177,11 @@ button.primary:hover { background: #2f74c9; }
 .svc-link { color: #4fc3f7; border-color: #4fc3f7; }
 
 
-.avatar {
+.profile-photo {
   margin: 0 0 8px;
   text-align: center;
 }
-.avatar img {
+.profile-photo img {
   width: 64px;
   height: 64px;
   border-radius: 50%;

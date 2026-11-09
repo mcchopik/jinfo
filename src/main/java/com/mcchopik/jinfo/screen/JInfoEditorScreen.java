@@ -159,7 +159,7 @@ public class JInfoEditorScreen extends Screen {
         int afterStyles = afterColors + bh + 4;
 
         addRenderableWidget(Button.builder(Component.literal(Messages.s("photo")),
-                        b -> append("{avatar} "))
+                        b -> append("{photo} "))
                 .bounds(sx, afterColors, 50, bh).build());
 
         int perRow = 5;

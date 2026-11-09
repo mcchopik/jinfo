@@ -198,7 +198,7 @@ public final class JInfoCommand {
                     lines.remove(lines.size() - 1);
                 }
                 if (!remove) {
-                    lines.add(0, "{avatar} " + url);
+                    lines.add(0, "{photo} " + url);
                 }
                 String text = String.join("\n", lines);
                 if (text.isBlank()) {
