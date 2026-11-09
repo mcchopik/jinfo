@@ -84,10 +84,24 @@ public class JInfoClient implements ClientModInitializer {
         }
         String uuid = MinecraftSession.current()
                 .map(MinecraftSession.SessionInfo::uuid)
+                .filter(JInfoClient::isUuidV4)
                 .map(JInfoClient::dashed)
                 .orElseGet(() -> PlayerResolver.offlineUuid(name));
         Screen parent = client.gui.screen();
         client.gui.setScreen(new JInfoProfileScreen(api, uuid, name, null, parent));
+    }
+
+    private static boolean isUuidV4(String uuid) {
+        if (uuid == null) {
+            return false;
+        }
+        if (uuid.length() == 32) {
+            return uuid.charAt(12) == '4';
+        }
+        if (uuid.length() == 36) {
+            return uuid.charAt(14) == '4';
+        }
+        return false;
     }
 
     private static String dashed(String uuid) {

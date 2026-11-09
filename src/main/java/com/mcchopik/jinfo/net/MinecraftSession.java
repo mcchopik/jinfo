@@ -1,5 +1,6 @@
 package com.mcchopik.jinfo.net;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Optional;
 import java.util.UUID;
@@ -50,28 +51,43 @@ public final class MinecraftSession {
     }
 
     /**
-     * Отдельно достаёт только ник (нужен даже без токена, например в offline).
+     * Ник текущего игрока. В offline/пиратке сессия часто пустая, поэтому сначала
+     * смотрим на локального игрока в мире (getName/getGameProfile), затем сессию,
+     * затем пользователя лаунчера.
      */
     public static Optional<String> currentUsername() {
-        Optional<SessionInfo> s = current();
-        if (s.isPresent() && s.get().username() != null && !s.get().username().isEmpty()) {
-            return Optional.of(s.get().username());
-        }
-        // Попробуем достать ник напрямую из сессии, даже если токен недоступен.
         try {
             Object client = clientInstance();
             if (client == null) {
                 return Optional.empty();
             }
-            Object session = invoke(client, "getSession");
-            if (session == null) {
-                return Optional.empty();
+
+            // 1) Локальный игрок в мире — самый надёжный источник ника.
+            Object player = field(client, "player");
+            if (player == null) {
+                player = invokeAny(client, "getPlayer", "player");
             }
-            String username = asString(invoke(session, "getUsername"));
-            return username == null || username.isEmpty() ? Optional.empty() : Optional.of(username);
-        } catch (Throwable t) {
-            return Optional.empty();
+            String fromPlayer = usernameOf(player);
+            if (fromPlayer != null) {
+                return Optional.of(fromPlayer);
+            }
+
+            // 2) Сессия (у лицензии ник есть и здесь).
+            Object session = invoke(client, "getSession");
+            String fromSession = asString(invoke(session, "getUsername"));
+            if (valid(fromSession)) {
+                return Optional.of(fromSession.trim());
+            }
+
+            // 3) Пользователь лаунчера.
+            Object user = invokeAny(client, "getUser");
+            String fromUser = usernameOf(user);
+            if (fromUser != null) {
+                return Optional.of(fromUser);
+            }
+        } catch (Throwable ignored) {
         }
+        return Optional.empty();
     }
 
     public static Object clientInstance() {
@@ -83,7 +99,49 @@ public final class MinecraftSession {
         }
     }
 
+    private static String usernameOf(Object owner) {
+        if (owner == null) {
+            return null;
+        }
+        Object profile = invokeAny(owner, "getGameProfile", "getProfile");
+        String name = profile == null ? null : asString(invoke(profile, "getName"));
+        if (valid(name)) {
+            return name.trim();
+        }
+        Object component = invoke(owner, "getName");
+        String text = component == null ? null : asString(invoke(component, "getString"));
+        if (valid(text)) {
+            return text.trim();
+        }
+        Object direct = invoke(owner, "getUsername");
+        return valid(asString(direct)) ? asString(direct).trim() : null;
+    }
+
+    private static boolean valid(String value) {
+        return value != null && !value.isBlank();
+    }
+
+    private static Object field(Object target, String name) {
+        try {
+            Class<?> type = target.getClass();
+            while (type != null) {
+                try {
+                    Field f = type.getDeclaredField(name);
+                    f.setAccessible(true);
+                    return f.get(target);
+                } catch (NoSuchFieldException e) {
+                    type = type.getSuperclass();
+                }
+            }
+        } catch (Throwable ignored) {
+        }
+        return null;
+    }
+
     private static Object invoke(Object target, String method) {
+        if (target == null) {
+            return null;
+        }
         try {
             Method m = target.getClass().getMethod(method);
             m.setAccessible(true);
@@ -91,6 +149,16 @@ public final class MinecraftSession {
         } catch (Throwable t) {
             return null;
         }
+    }
+
+    private static Object invokeAny(Object target, String... methods) {
+        for (String method : methods) {
+            Object value = invoke(target, method);
+            if (value != null) {
+                return value;
+            }
+        }
+        return null;
     }
 
     private static String asString(Object o) {
