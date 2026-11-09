@@ -113,7 +113,7 @@ public final class MinecraftSession {
         if (valid(text)) {
             return text.trim();
         }
-        Object direct = invoke(owner, "getUsername");
+        Object direct = invokeAny(owner, "getScoreboardName", "getUsername");
         return valid(asString(direct)) ? asString(direct).trim() : null;
     }
 
