@@ -8,7 +8,7 @@
 - **Шаг 4 (сетевой клиент)** — готово: `com.mcchopik.jinfo.net` (ApiClient, TokenStore,
   OfflineKeyStore, ProfileCache, MinecraftSession) + тесты. Online-авторизация берёт токен
   сессии через рефлексию (best-effort); если недоступно — используется offline Ed25519.
-- **Шаг 5 (команда /jinfo)** — готово: help/edit/web/set/me/view/clear. web пока заглушка.
+- **Шаг 5 (команда /jinfo)** — готово: help/edit/web/set/me/view/clear (+settings на шаге 10).
   Имена API 26.2 взяты из рабочего шаблона: `net.minecraft.client.Minecraft`,
   `net.minecraft.network.chat.Component`. Команды регистрируются через Brigadier
   (`ClientCommandManager` в этой версии Fabric API отсутствует).
