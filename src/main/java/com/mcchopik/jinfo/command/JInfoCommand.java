@@ -5,6 +5,7 @@ import com.mcchopik.jinfo.net.ApiException;
 import com.mcchopik.jinfo.net.MinecraftSession;
 import com.mcchopik.jinfo.net.PlayerResolver;
 import com.mcchopik.jinfo.net.ProfileData;
+import com.mcchopik.jinfo.screen.JInfoEditorScreen;
 import com.mcchopik.jinfo.text.Lang;
 import com.mcchopik.jinfo.text.ParsedProfile;
 import com.mcchopik.jinfo.text.TextParser;
@@ -15,6 +16,7 @@ import java.util.concurrent.CompletableFuture;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
 /**
@@ -44,7 +46,11 @@ public final class JInfoCommand {
                         .executes(ctx -> help(ctx.getSource()))
                         .then(lit("help").executes(ctx -> help(ctx.getSource())))
                         .then(lit("edit").executes(ctx -> {
-                            reply(ctx.getSource(), "Экран редактора появится на следующем шаге.");
+                            Minecraft client = ctx.getSource().getClient();
+                            client.execute(() -> {
+                                Screen parent = client.gui.screen();
+                                client.gui.setScreen(new JInfoEditorScreen(api, parent));
+                            });
                             return 1;
                         }))
                         .then(lit("web").executes(ctx -> {
