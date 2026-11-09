@@ -3,6 +3,7 @@ package com.mcchopik.jinfo.screen;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import com.mcchopik.jinfo.text.Messages;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
@@ -26,7 +27,7 @@ public class LinkConfirmScreen extends Screen {
     private int panelH;
 
     public LinkConfirmScreen(String url, String serviceLabel, Screen parent, boolean suspicious) {
-        super(Component.literal("Открыть ссылку?"));
+        super(Component.literal(Messages.s("open_title")));
         this.url = url;
         this.serviceLabel = serviceLabel;
         this.parent = parent;
@@ -42,10 +43,10 @@ public class LinkConfirmScreen extends Screen {
 
         int by = panelY + panelH - 26;
         int bw = 100;
-        addRenderableWidget(Button.builder(Component.literal("Открыть"), b -> open())
+        addRenderableWidget(Button.builder(Component.literal(Messages.s("open")), b -> open())
                 .bounds(panelX + panelW / 2 - bw - 4, by, bw, 20)
                 .build());
-        addRenderableWidget(Button.builder(Component.literal("Отмена"), b -> onClose())
+        addRenderableWidget(Button.builder(Component.literal(Messages.s("cancel")), b -> onClose())
                 .bounds(panelX + panelW / 2 + 4, by, bw, 20)
                 .build());
     }
@@ -74,11 +75,11 @@ public class LinkConfirmScreen extends Screen {
 
         int x = panelX + 12;
         int y = panelY + 12;
-        graphics.text(font, "Открыть ссылку?", x, y, 0xFFFFFFFF, true);
+        graphics.text(font, Messages.s("open_title"), x, y, 0xFFFFFFFF, true);
         y += 14;
-        graphics.text(font, "Сервис: " + serviceLabel, x, y, 0xFFB8C0CC, false);
+        graphics.text(font, Messages.s("service") + ": " + serviceLabel, x, y, 0xFFB8C0CC, false);
         y += 12;
-        graphics.text(font, "Домен: " + host(), x, y, 0xFFFFCC55, false);
+        graphics.text(font, Messages.s("domain") + ": " + host(), x, y, 0xFFFFCC55, false);
         y += 16;
 
         for (String line : wrap(url, panelW - 24)) {
@@ -87,7 +88,7 @@ public class LinkConfirmScreen extends Screen {
         }
 
         if (suspicious) {
-            graphics.text(font, "Внимание: адрес выглядит подозрительно.", x, y + 4,
+            graphics.text(font, Messages.s("suspicious"), x, y + 4,
                     0xFFFF5555, false);
         }
 

@@ -3,8 +3,10 @@ package com.mcchopik.jinfo.screen;
 import com.mcchopik.jinfo.net.ApiClient;
 import com.mcchopik.jinfo.net.ApiException;
 import com.mcchopik.jinfo.net.ProfileData;
+import com.mcchopik.jinfo.net.MinecraftSession;
 import com.mcchopik.jinfo.net.SkinHelper;
 import com.mcchopik.jinfo.text.Lang;
+import com.mcchopik.jinfo.text.Messages;
 import com.mcchopik.jinfo.text.ParsedProfile;
 import com.mcchopik.jinfo.text.Part;
 import com.mcchopik.jinfo.text.Service;
@@ -35,7 +37,7 @@ public class JInfoProfileScreen extends Screen {
 
     private Identifier skin;
     private ParsedProfile parsed;
-    private String statusText = "Загрузка...";
+    private String statusText = Messages.s("loading");
     private int statusColor = 0xFFAAAAAA;
     private boolean verified = false;
 
@@ -83,11 +85,10 @@ public class JInfoProfileScreen extends Screen {
     private void setWidgets() {
         clearWidgets();
         int by = panelY + panelH - 24;
-        addRenderableWidget(Button.builder(Component.literal("Закрыть"), b -> onClose())
+        addRenderableWidget(Button.builder(Component.literal(Messages.s("close")), b -> onClose())
                 .bounds(panelX + panelW - 90, by, 78, 18)
                 .build());
-        addRenderableWidget(Button.builder(Component.literal("Пожаловаться"), b ->
-                        setStatus("Жалоба будет доступна на следующем шаге.", 0xFFFFAA00))
+        addRenderableWidget(Button.builder(Component.literal(Messages.s("report")), b -> report())
                 .bounds(panelX + 12, by, 100, 18)
                 .build());
 
@@ -155,7 +156,7 @@ public class JInfoProfileScreen extends Screen {
                     parsed = p;
                     loading = false;
                     verified = data.verified();
-                    statusText = verified ? "Профиль подтверждён" : "Профиль (не подтверждён)";
+                    statusText = verified ? Messages.s("verified") : Messages.s("unverified");
                     statusColor = verified ? 0xFF55FF55 : 0xFFFFAA00;
                     setWidgets();
                 });
@@ -163,13 +164,13 @@ public class JInfoProfileScreen extends Screen {
                 onClient(() -> {
                     loading = false;
                     if (e.statusCode() == 404) {
-                        statusText = "Профиль не заполнен";
+                        statusText = Messages.s("not_filled");
                         statusColor = 0xFFAAAAAA;
                     } else if (e.statusCode() == 429) {
-                        statusText = "Слишком часто, подожди";
+                        statusText = Messages.s("rate_limited");
                         statusColor = 0xFFFFAA00;
                     } else {
-                        statusText = "Ошибка сети";
+                        statusText = Messages.s("net_error");
                         statusColor = 0xFFFF5555;
                     }
                     setWidgets();
@@ -177,10 +178,38 @@ public class JInfoProfileScreen extends Screen {
             } catch (Exception e) {
                 onClient(() -> {
                     loading = false;
-                    statusText = "Ошибка сети";
+                    statusText = Messages.s("net_error");
                     statusColor = 0xFFFF5555;
                     setWidgets();
                 });
+            }
+        });
+    }
+
+    private void report() {
+        setStatus(Messages.s("loading"), 0xFFAAAAAA);
+        CompletableFuture.runAsync(() -> {
+            try {
+                if (!api.isLoggedIn()) {
+                    String self = MinecraftSession.currentUsername().orElse(null);
+                    if (self != null) {
+                        api.login(self);
+                    }
+                }
+                api.report(uuid);
+                onClient(() -> setStatus(Messages.s("reported"), 0xFF55FF55));
+            } catch (ApiException e) {
+                onClient(() -> {
+                    if (e.statusCode() == 429) {
+                        setStatus(Messages.s("already_reported"), 0xFFFFAA00);
+                    } else if (e.statusCode() == 400) {
+                        setStatus(Messages.s("report_self"), 0xFFFF5555);
+                    } else {
+                        setStatus(Messages.s("report_failed"), 0xFFFF5555);
+                    }
+                });
+            } catch (Exception e) {
+                onClient(() -> setStatus(Messages.s("report_failed"), 0xFFFF5555));
             }
         });
     }

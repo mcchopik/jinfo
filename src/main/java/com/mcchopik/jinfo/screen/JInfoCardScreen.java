@@ -5,6 +5,7 @@ import com.mcchopik.jinfo.net.ApiException;
 import com.mcchopik.jinfo.net.ProfileData;
 import com.mcchopik.jinfo.net.SkinHelper;
 import com.mcchopik.jinfo.text.Lang;
+import com.mcchopik.jinfo.text.Messages;
 import com.mcchopik.jinfo.text.ParsedProfile;
 import com.mcchopik.jinfo.text.TextParser;
 import java.util.concurrent.CompletableFuture;
@@ -33,7 +34,7 @@ public class JInfoCardScreen extends Screen {
 
     private Identifier skin;
     private ParsedProfile parsed;
-    private String statusText = "Загрузка...";
+    private String statusText = Messages.s("loading");
     private int statusColor = 0xFFAAAAAA;
     private boolean hasProfile = false;
     private boolean verified = false;
@@ -64,9 +65,9 @@ public class JInfoCardScreen extends Screen {
         int bw = 80;
         int by = panelY + PANEL_H - 26;
         addRenderableWidget(new PaintedButton(headX, headY, HEAD, HEAD,
-                Component.literal("Открыть профиль"), (g, b, hovered) -> {
+                Component.literal(Messages.s("open_profile")), (g, b, hovered) -> {
                 }, this::openProfile));
-        addRenderableWidget(Button.builder(Component.literal("Открыть профиль"), b -> openProfile())
+        addRenderableWidget(Button.builder(Component.literal(Messages.s("open_profile")), b -> openProfile())
                 .bounds(panelX + (PANEL_W - bw) / 2, by, bw, 18)
                 .build());
 
@@ -88,26 +89,26 @@ public class JInfoCardScreen extends Screen {
                     parsed = p;
                     hasProfile = true;
                     verified = data.verified();
-                    statusText = verified ? "Профиль подтверждён" : "Профиль (не подтверждён)";
+                    statusText = verified ? Messages.s("verified") : Messages.s("unverified");
                     statusColor = verified ? 0xFF55FF55 : 0xFFFFAA00;
                 });
             } catch (ApiException e) {
                 onClient(() -> {
                     if (e.statusCode() == 404) {
                         hasProfile = false;
-                        statusText = "Профиль не заполнен";
+                        statusText = Messages.s("not_filled");
                         statusColor = 0xFFAAAAAA;
                     } else if (e.statusCode() == 429) {
-                        statusText = "Слишком часто, подожди";
+                        statusText = Messages.s("rate_limited");
                         statusColor = 0xFFFFAA00;
                     } else {
-                        statusText = "Ошибка сети";
+                        statusText = Messages.s("net_error");
                         statusColor = 0xFFFF5555;
                     }
                 });
             } catch (Exception e) {
                 onClient(() -> {
-                    statusText = "Ошибка сети";
+                    statusText = Messages.s("net_error");
                     statusColor = 0xFFFF5555;
                 });
             }

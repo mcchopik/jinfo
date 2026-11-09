@@ -2,17 +2,19 @@ package com.mcchopik.jinfo.config;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.mcchopik.jinfo.text.Lang;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
 /**
- * Простой конфиг мода. На шаге 10 будет расширен настройками.
+ * Простой конфиг мода: жест Shift+ПКМ и язык интерфейса.
  */
 public final class JInfoConfig {
 
     private static Path file;
     private static boolean gestureEnabled = true;
+    private static Lang language = Lang.RU;
 
     private JInfoConfig() {
     }
@@ -31,6 +33,15 @@ public final class JInfoConfig {
         save();
     }
 
+    public static synchronized Lang language() {
+        return language;
+    }
+
+    public static synchronized void setLanguage(Lang value) {
+        language = value;
+        save();
+    }
+
     private static void load() {
         try {
             if (file != null && Files.exists(file)) {
@@ -38,6 +49,12 @@ public final class JInfoConfig {
                 JsonObject obj = JsonParser.parseString(json).getAsJsonObject();
                 if (obj.has("gestureEnabled")) {
                     gestureEnabled = obj.get("gestureEnabled").getAsBoolean();
+                }
+                if (obj.has("language")) {
+                    try {
+                        language = Lang.valueOf(obj.get("language").getAsString());
+                    } catch (Exception ignored) {
+                    }
                 }
             }
         } catch (Exception ignored) {
@@ -52,6 +69,7 @@ public final class JInfoConfig {
             Files.createDirectories(file.getParent());
             JsonObject obj = new JsonObject();
             obj.addProperty("gestureEnabled", gestureEnabled);
+            obj.addProperty("language", language.name());
             Files.writeString(file, obj.toString(), StandardCharsets.UTF_8);
         } catch (Exception ignored) {
         }

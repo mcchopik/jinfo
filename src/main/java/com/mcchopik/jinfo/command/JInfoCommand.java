@@ -1,12 +1,13 @@
 package com.mcchopik.jinfo.command;
 
+import com.mcchopik.jinfo.config.JInfoConfig;
 import com.mcchopik.jinfo.net.ApiClient;
 import com.mcchopik.jinfo.net.ApiException;
 import com.mcchopik.jinfo.net.MinecraftSession;
 import com.mcchopik.jinfo.net.PlayerResolver;
 import com.mcchopik.jinfo.net.ProfileData;
 import com.mcchopik.jinfo.screen.JInfoEditorScreen;
-import com.mcchopik.jinfo.text.Lang;
+import com.mcchopik.jinfo.screen.JInfoSettingsScreen;
 import com.mcchopik.jinfo.text.ParsedProfile;
 import com.mcchopik.jinfo.text.TextParser;
 import com.mcchopik.jinfo.web.WebServer;
@@ -29,7 +30,6 @@ import net.minecraft.util.Util;
 public final class JInfoCommand {
 
     private static final TextParser PARSER = new TextParser();
-    private static final Lang LANG = Lang.RU;
 
     private JInfoCommand() {
     }
@@ -59,6 +59,14 @@ public final class JInfoCommand {
                         .then(lit("web")
                                 .executes(ctx -> webStart(ctx.getSource(), api))
                                 .then(lit("stop").executes(ctx -> webStop(ctx.getSource()))))
+                        .then(lit("settings").executes(ctx -> {
+                            Minecraft client = ctx.getSource().getClient();
+                            client.execute(() -> {
+                                Screen parent = client.gui.screen();
+                                client.gui.setScreen(new JInfoSettingsScreen(parent));
+                            });
+                            return 1;
+                        }))
                         .then(lit("me").executes(ctx -> me(ctx.getSource(), api)))
                         .then(lit("clear").executes(ctx -> clear(ctx.getSource(), api)))
                         .then(lit("view").then(arg("name", StringArgumentType.word())
@@ -80,6 +88,7 @@ public final class JInfoCommand {
         reply(src, "/jinfo help — эта справка");
         reply(src, "/jinfo edit — открыть редактор в игре");
         reply(src, "/jinfo web — открыть редактор в браузере");
+        reply(src, "/jinfo settings — язык и жест Shift+ПКМ");
         reply(src, "/jinfo set <текст> — быстро задать текст");
         reply(src, "/jinfo me — показать мой профиль");
         reply(src, "/jinfo view <ник> — профиль игрока");
@@ -156,7 +165,7 @@ public final class JInfoCommand {
             reply(src, "Не удалось определить ник игрока.");
             return 0;
         }
-        ParsedProfile parsed = PARSER.parse(text, LANG);
+        ParsedProfile parsed = PARSER.parse(text, JInfoConfig.language());
         if (parsed.overLimits()) {
             reply(src, "Превышены лимиты (500 символов / 10 строк / 6 ссылок).");
             return 0;
@@ -242,7 +251,7 @@ public final class JInfoCommand {
     // ------------------------------------------------------------------
 
     private static void showProfile(FabricClientCommandSource src, ProfileData data) {
-        ParsedProfile parsed = PARSER.parse(data.data(), LANG);
+        ParsedProfile parsed = PARSER.parse(data.data(), JInfoConfig.language());
         String marker = data.verified() ? "" : " [не подтверждён]";
         reply(src, "Статус: " + (data.verified() ? "подтверждён" : "не подтверждён") + marker);
         for (String line : parsed.plainText().split("\n", -1)) {
