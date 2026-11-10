@@ -6,8 +6,8 @@ import com.mcchopik.jinfo.server.profile.ProfileStorage;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
-import net.minecraft.server.command.CommandManager;
-import net.minecraft.text.Text;
+import net.minecraft.commands.Commands;
+import net.minecraft.network.chat.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,41 +29,41 @@ public class JInfoServerMod implements ModInitializer {
 
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) ->
                 dispatcher.register(
-                        CommandManager.literal("jinfo")
-                                .requires(source -> source.hasPermissionLevel(2))
-                                .then(CommandManager.literal("reload")
+                        Commands.literal("jinfo")
+                                .requires(source -> source.hasPermission(2))
+                                .then(Commands.literal("reload")
                                         .executes(ctx -> {
                                             ServerConfig.load();
                                             httpServer.reload(ServerConfig.getPort());
-                                            ctx.getSource().sendFeedback(() ->
-                                                    Text.literal("§aJInfo Server config reloaded"), true);
+                                            ctx.getSource().sendSuccess(() ->
+                                                    Component.literal("§aJInfo Server config reloaded"), true);
                                             return 1;
                                         }))
-                                .then(CommandManager.literal("profile")
-                                        .then(CommandManager.argument("name", StringArgumentType.word())
+                                .then(Commands.literal("profile")
+                                        .then(Commands.argument("name", StringArgumentType.word())
                                                 .executes(ctx -> {
                                                     String name = StringArgumentType.getString(ctx, "name");
                                                     String uuid = profileStorage.getUuidByName(name);
                                                     if (uuid == null) {
-                                                        ctx.getSource().sendError(
-                                                                Text.literal("§cProfile not found for " + name));
+                                                        ctx.getSource().sendFailure(
+                                                                Component.literal("§cProfile not found for " + name));
                                                         return 0;
                                                     }
                                                     String url = "http://" + ServerConfig.getHost() + ":"
                                                             + ServerConfig.getPort() + "/p/" + uuid;
-                                                    ctx.getSource().sendFeedback(() ->
-                                                            Text.literal("§aProfile for " + name + ": §b" + url), true);
+                                                    ctx.getSource().sendSuccess(() ->
+                                                            Component.literal("§aProfile for " + name + ": §b" + url), true);
                                                     return 1;
                                                 })))
-                                .then(CommandManager.literal("list")
+                                .then(Commands.literal("list")
                                         .executes(ctx -> {
                                             if (profileStorage.getAllProfiles().isEmpty()) {
-                                                ctx.getSource().sendFeedback(() ->
-                                                        Text.literal("§7No profiles yet."), false);
+                                                ctx.getSource().sendSuccess(() ->
+                                                        Component.literal("§7No profiles yet."), false);
                                                 return 1;
                                             }
-                                            profileStorage.getAllProfiles().forEach(p -> ctx.getSource().sendFeedback(() ->
-                                                    Text.literal("§7- §f" + (p.has("name") ? p.get("name").getAsString() : "?")
+                                            profileStorage.getAllProfiles().forEach(p -> ctx.getSource().sendSuccess(() ->
+                                                    Component.literal("§7- §f" + (p.has("name") ? p.get("name").getAsString() : "?")
                                                             + " §8(" + p.get("uuid").getAsString() + ")"), false));
                                             return 1;
                                         }))
