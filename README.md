@@ -11,7 +11,7 @@ Paper plugin for Minecraft 26.2. It provides JInfo profiles through chat command
 
 ## Install
 
-1. Put `jinfo-paper-0.3.0.jar` into `plugins/`.
+1. Put `JInfo-Server-Paper-0.3.0.jar` into `plugins/`.
 2. Start the server. `plugins/JInfoPaper/config.yml` is created automatically.
 3. Edit `central-api-base` or `profiles-dir` if needed.
 4. Restart the server.
