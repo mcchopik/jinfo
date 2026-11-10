@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 class ProfileCacheTest {
 
     private static ProfileData profile(String uuid) {
-        return new ProfileData(uuid, "data", 123L, true);
+        return new ProfileData(uuid, "data", 123L, true, null);
     }
 
     @Test
