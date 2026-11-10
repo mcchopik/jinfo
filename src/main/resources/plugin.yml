@@ -2,15 +2,17 @@ name: JInfo Paper
 version: ${version}
 main: com.mcchopik.jinfo.paper.JInfoPaperPlugin
 api-version: '26.2'
-description: Server-side player profile viewer with HTTP API and web UI.
+description: Server-side JInfo profiles via chat commands. No client mod and no web page required.
 author: mcchopik
 website: https://github.com/mcchopik/jinfo
 commands:
   jinfo:
-    description: JInfo server profile management
-    usage: /jinfo <reload|list|profile|import|remove>
-    permission: jinfo.admin
+    description: JInfo server profile commands
+    usage: /jinfo <me|view|set|photo|clear|list|import|remove|reload>
 permissions:
+  jinfo.use:
+    description: Allows using JInfo profile commands
+    default: true
   jinfo.admin:
     description: Allows managing JInfo server profiles
     default: op

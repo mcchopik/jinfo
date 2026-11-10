@@ -1,4 +1,2 @@
-port: 8765
-host: 0.0.0.0
 central-api-base: https://mcprofiles.mcchopik.workers.dev
-public-url: ""
+profiles-dir: profiles
