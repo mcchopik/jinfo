@@ -151,7 +151,7 @@ public class JInfoProfileScreen extends Screen {
                 UUID real = new UUID(Long.parseUnsignedLong(id.substring(0, 16), 16),
                         Long.parseUnsignedLong(id.substring(16), 16));
                 GameProfile profile = new GameProfile(real, playerName);
-                return client.getSkinManager().createLookup(profile, true);
+                return client.getSkinManager().createLookup(profile, true).get();
             } catch (Throwable t) {
                 return null;
             }

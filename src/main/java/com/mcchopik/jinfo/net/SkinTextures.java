@@ -172,9 +172,6 @@ public final class SkinTextures {
     }
 
     public static void clear() {
-        for (PlayerSkin skin : READY.values()) {
-            skin.body().close();
-        }
         READY.clear();
         LOADING.clear();
     }
