@@ -1,5 +1,22 @@
 # JInfo — статус и заметки
 
+## 0.3beta (актуально)
+- **Скины** — `JInfoConfig` (`skinMode`, `skinUrl`, `skinFile`, `skinSlim`),
+  `SkinTextures` (https/локальный PNG, проверка размеров, DynamicTexture,
+  `PlayerSkin.insecure`, кэш), `JInfoSkinScreen` (URL/файл, classic/slim,
+  3D-предпросмотр), скин в `JInfoProfileScreen`/`JInfoCardScreen`.
+  Режим AUTO использует скин игрока, поэтому совместим с другими скин-модами.
+- **Публикация скина** — `ApiClient.putProfile` отправляет `skin`
+  (`{"url":"https://...","model":"slim|classic"}`), worker хранит JSON-строку;
+  `GET /profile/:uuid` возвращает `skin`.
+- **Публичный API** — `GET /public/profile/:uuid` без авторизации для серверных
+  компонентов; также добавлен `profiles.skin TEXT`.
+- **Серверные компоненты** — ветка `server` (Fabric 1.21.4) и ветка `paper`
+  (Paper 1.21.4): веб-просмотр профилей без клиента, `/jinfo`, JSON API.
+  Релизы `server-v0.1.0` и `paper-v0.1.0` собраны GitHub Actions.
+- **SPKI-фикс** — offline-авторизация принимает Ed25519 public key в X.509/SPKI
+  (`MCowBQYDK2Vw...`) и в raw-формате; Java-подпись проверена.
+
 ## Краткий итог (сверху)
 - **Своё фото** — `{photo} https://...` (поддерживается и `{avatar}`) в тексте профиля;
   парсер складывает ссылку в `ParsedProfile.avatarUrl()`, игра скачивает картинку
