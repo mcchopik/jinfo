@@ -14,6 +14,7 @@ import com.mcchopik.jinfo.util.UiColors;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
@@ -29,6 +30,13 @@ public class JInfoEditorScreen extends Screen {
     private static final String[] COLOR_CODES = {
             "0", "1", "2", "3", "4", "5", "6", "7",
             "8", "9", "a", "b", "c", "d", "e", "f"
+    };
+
+    private static final int[] COLOR_VALUES = {
+            0x000000, 0x0000AA, 0x00AA00, 0x00AAAA,
+            0xAA0000, 0xAA00AA, 0xFFAA00, 0xAAAAAA,
+            0x555555, 0x5555FF, 0x55FF55, 0x55FFFF,
+            0xFF5555, 0xFF55FF, 0xFFFF55, 0xFFFFFF
     };
 
     private final ApiClient api;
@@ -133,9 +141,8 @@ public class JInfoEditorScreen extends Screen {
             final String code = COLOR_CODES[i];
             int col = i % 8;
             int row = i / 8;
-            Button b = Button.builder(Component.literal("&" + code), btn -> append("&" + code))
-                    .bounds(left + col * (bw + gap), top + row * (bh + gap), bw, bh)
-                    .build();
+            Button b = new ColorButton(left + col * (bw + gap), top + row * (bh + gap),
+                    bw, bh, code, COLOR_VALUES[i], btn -> append("&" + code));
             addRenderableWidget(b);
         }
         int afterColors = top + 2 * (bh + gap) + 4;
@@ -191,6 +198,44 @@ public class JInfoEditorScreen extends Screen {
         addRenderableWidget(hex);
         addRenderableWidget(Button.builder(Component.literal("Hex"), b -> applyHex())
                 .bounds(left + 484, hexY2, 40, bh).build());
+    }
+
+    private static final class ColorButton extends Button {
+
+        private final String code;
+        private final int color;
+
+        private ColorButton(int x, int y, int width, int height, String code, int color,
+                            Button.OnPress onPress) {
+            super(x, y, width, height, Component.literal("&" + code), onPress, DEFAULT_NARRATION);
+            this.code = code;
+            this.color = color;
+        }
+
+        @Override
+        protected void extractContents(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
+            int background = isHoveredOrFocused() ? brighten(color) : color;
+            graphics.fill(getX(), getY(), getRight(), getBottom(), 0xFF000000 | background);
+            String label = "&" + code;
+            int textColor = isLight(background) ? 0xFF101010 : 0xFFFFFFFF;
+            int x = getX() + (getWidth() - Minecraft.getInstance().font.width(label)) / 2;
+            int y = getY() + (getHeight() - 8) / 2;
+            graphics.text(Minecraft.getInstance().font, label, x, y, textColor, false);
+        }
+
+        private static int brighten(int value) {
+            int r = Math.min(255, ((value >> 16) & 0xFF) + 45);
+            int g = Math.min(255, ((value >> 8) & 0xFF) + 45);
+            int b = Math.min(255, (value & 0xFF) + 45);
+            return (r << 16) | (g << 8) | b;
+        }
+
+        private static boolean isLight(int value) {
+            int r = (value >> 16) & 0xFF;
+            int g = (value >> 8) & 0xFF;
+            int b = value & 0xFF;
+            return (r * 299 + g * 587 + b * 114) / 1000 > 150;
+        }
     }
 
     private void applyHex() {
