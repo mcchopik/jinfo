@@ -44,4 +44,3 @@ Server: `/jinfo me`, `/jinfo view <name>`, `/jinfo set <text>`, `/jinfo photo <u
 - [All descriptions](docs/descriptions/README.md)
 - [Releases](https://github.com/mcchopik/jinfo/releases)
 - [Issues](https://github.com/mcchopik/jinfo/issues)
-- [Security notes](NOTES.md)
