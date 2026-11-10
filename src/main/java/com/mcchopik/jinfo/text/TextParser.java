@@ -2,6 +2,7 @@ package com.mcchopik.jinfo.text;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public final class TextParser {
 
@@ -95,12 +96,12 @@ public final class TextParser {
 
         if (n == '#' && i + 7 < text.length()) {
             String hex = text.substring(i + 2, i + 8);
-            if (hex.matches("[0-9a-fA-F]{6}")) {
-                return new FormatResult(8, current.withColor("#" + hex.toUpperCase()));
+            if (isHex(hex)) {
+                return new FormatResult(8, current.withColor("#" + hex.toUpperCase(Locale.ROOT)));
             }
         }
 
-        if (n >= '0' && n <= '9' || n >= 'a' && n <= 'f') {
+        if ((n >= '0' && n <= '9') || (n >= 'a' && n <= 'f')) {
             int idx = Character.digit(n, 16);
             return new FormatResult(2, current.withColor(COLOR_CODES[idx]));
         }
@@ -147,7 +148,7 @@ public final class TextParser {
             return null;
         }
 
-        String lower = content.toLowerCase();
+        String lower = content.toLowerCase(Locale.ROOT);
         boolean universal = lower.startsWith("link:");
         boolean avatar = lower.equals("avatar") || lower.equals("photo");
         Service service = universal || avatar ? null : Service.byKey(content);
@@ -170,7 +171,7 @@ public final class TextParser {
         }
 
         if (avatar) {
-            if (!arg.toLowerCase().startsWith("https://")) {
+            if (!arg.toLowerCase(Locale.ROOT).startsWith("https://")) {
                 return new PlaceholderResult(null, text.substring(i, p), null, p);
             }
             LinkValidator.Result res = LinkValidator.validateGeneric(arg);
@@ -192,7 +193,7 @@ public final class TextParser {
             if (title.isEmpty()) {
                 title = "Link";
             }
-            if (!arg.toLowerCase().startsWith("https://")) {
+            if (!arg.toLowerCase(Locale.ROOT).startsWith("https://")) {
                 return new PlaceholderResult(null, text.substring(i, p), null, p);
             }
             LinkValidator.Result res = LinkValidator.validateGeneric(arg);
@@ -204,14 +205,12 @@ public final class TextParser {
         }
 
         String url;
-        if (arg.toLowerCase().startsWith("https://") || arg.toLowerCase().startsWith("http://")) {
+        String argLower = arg.toLowerCase(Locale.ROOT);
+        if (argLower.startsWith("https://") || argLower.startsWith("http://")) {
             url = arg;
         } else {
             String handle = arg.startsWith("@") ? arg.substring(1) : arg;
-            if (!handle.matches("[A-Za-z0-9._-]{1,64}")) {
-                return new PlaceholderResult(null, text.substring(i, p), null, p);
-            }
-            if (handle.isEmpty()) {
+            if (!isHandle(handle)) {
                 return new PlaceholderResult(null, text.substring(i, p), null, p);
             }
             url = service.buildUrl(handle);
@@ -280,7 +279,49 @@ public final class TextParser {
             out.append(c);
         }
 
-        String collapsed = out.toString().replaceAll("(.)\\1{4,}", "$1$1$1$1");
-        return collapsed;
+        StringBuilder collapsed = new StringBuilder(out.length());
+        char last = 0;
+        int run = 0;
+        for (int i = 0; i < out.length(); i++) {
+            char c = out.charAt(i);
+            if (c == last) {
+                run++;
+            } else {
+                last = c;
+                run = 1;
+            }
+            if (run <= 4) {
+                collapsed.append(c);
+            }
+        }
+        return collapsed.toString();
+    }
+
+    private static boolean isHex(String value) {
+        if (value.length() != 6) {
+            return false;
+        }
+        for (int i = 0; i < value.length(); i++) {
+            char c = Character.toLowerCase(value.charAt(i));
+            if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f'))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean isHandle(String handle) {
+        if (handle.isEmpty() || handle.length() > 64) {
+            return false;
+        }
+        for (int i = 0; i < handle.length(); i++) {
+            char c = handle.charAt(i);
+            boolean ok = (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')
+                    || (c >= '0' && c <= '9') || c == '.' || c == '_' || c == '-';
+            if (!ok) {
+                return false;
+            }
+        }
+        return true;
     }
 }

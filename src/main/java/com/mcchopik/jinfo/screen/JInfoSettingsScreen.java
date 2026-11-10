@@ -4,10 +4,10 @@ import com.mcchopik.jinfo.JInfoClient;
 import com.mcchopik.jinfo.config.JInfoConfig;
 import com.mcchopik.jinfo.text.Lang;
 import com.mcchopik.jinfo.text.Messages;
+import com.mcchopik.jinfo.util.TextLayout;
+import com.mcchopik.jinfo.util.UiColors;
 import com.mcchopik.jinfo.web.WebServer;
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
@@ -129,70 +129,47 @@ public class JInfoSettingsScreen extends Screen {
         CompletableFuture.runAsync(() -> {
             try {
                 String url = WebServer.start(JInfoClient.api(), name);
-                if (minecraft != null) {
-                    minecraft.execute(() -> {
-                        try {
-                            Util.getPlatform().openUri(URI.create(url));
-                        } catch (Throwable ignored) {
-                        }
-                    });
-                }
-                note = url;
+                onClient(() -> {
+                    note = url;
+                    try {
+                        Util.getPlatform().openUri(URI.create(url));
+                    } catch (Throwable ignored) {
+                    }
+                });
             } catch (Exception e) {
-                note = Messages.s("err_generic") + ": " + e.getMessage();
+                onClient(() -> note = Messages.s("err_generic") + ": " + e.getMessage());
             }
         });
     }
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
-        graphics.fill(0, 0, width, height, 0x99000000);
-        graphics.fill(panelX, panelY, panelX + panelW, panelY + panelH, 0xFF171B21);
-        graphics.fill(panelX, panelY, panelX + panelW, panelY + 2, 0xFF2F74C9);
+        graphics.fill(0, 0, width, height, UiColors.OVERLAY);
+        graphics.fill(panelX, panelY, panelX + panelW, panelY + panelH, UiColors.PANEL);
+        graphics.fill(panelX, panelY, panelX + panelW, panelY + 2, UiColors.BORDER);
 
-        graphics.text(font, Messages.s("settings"), panelX + 16, panelY + 10, 0xFFFFFFFF, true);
-        graphics.text(font, Messages.s("language"), panelX + 16, panelY + 52, 0xFFB8C0CC, false);
+        graphics.text(font, Messages.s("settings"), panelX + 16, panelY + 10, UiColors.TEXT, true);
+        graphics.text(font, Messages.s("language"), panelX + 16, panelY + 52, UiColors.TEXT_LABEL, false);
 
         int y = panelY + 180;
-        for (String line : wrap(Messages.s("key_hint"), panelW - 32)) {
-            graphics.text(font, line, panelX + 16, y, 0xFFB8C0CC, false);
+        for (String line : TextLayout.wrap(font, Messages.s("key_hint"), panelW - 32)) {
+            graphics.text(font, line, panelX + 16, y, UiColors.TEXT_LABEL, false);
             y += 10;
         }
         if (!note.isBlank()) {
-            graphics.text(font, fit(note, panelW - 32), panelX + 16, panelY + panelH - 44,
-                    0xFFFFAA00, false);
+            graphics.text(font, TextLayout.fit(font, note, panelW - 32), panelX + 16, panelY + panelH - 44,
+                    UiColors.WARN, false);
         }
 
         super.extractRenderState(graphics, mouseX, mouseY, delta);
     }
 
-    private String fit(String text, int maxWidth) {
-        if (font.width(text) <= maxWidth) {
-            return text;
+    private void onClient(Runnable action) {
+        if (minecraft != null) {
+            minecraft.execute(action);
+        } else {
+            action.run();
         }
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < text.length(); i++) {
-            if (font.width(sb.toString() + text.charAt(i)) > maxWidth - 6) {
-                break;
-            }
-            sb.append(text.charAt(i));
-        }
-        return sb + "…";
-    }
-
-    private List<String> wrap(String text, int maxWidth) {
-        List<String> out = new ArrayList<>();
-        StringBuilder line = new StringBuilder();
-        for (int i = 0; i < text.length(); i++) {
-            char c = text.charAt(i);
-            if (font.width(line.toString() + c) > maxWidth) {
-                out.add(line.toString());
-                line.setLength(0);
-            }
-            line.append(c);
-        }
-        out.add(line.toString());
-        return out;
     }
 
     @Override

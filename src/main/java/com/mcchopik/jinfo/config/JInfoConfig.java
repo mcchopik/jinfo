@@ -9,6 +9,9 @@ import java.nio.file.Path;
 
 public final class JInfoConfig {
 
+    private static final String MODEL_SLIM = "slim";
+    private static final String MODEL_CLASSIC = "classic";
+
     private static Path file;
     private static boolean gestureEnabled = true;
     private static Lang language = Lang.RU;
@@ -94,11 +97,14 @@ public final class JInfoConfig {
         save();
     }
 
-    public static String skinPayload() {
-        if (skinMode == SkinMode.URL && !skinUrl.isBlank()) {
-            return "{\"url\":\"" + skinUrl.replace("\\", "\\\\").replace("\"", "\\\"") + "\",\"model\":\"" + (skinSlim ? "slim" : "classic") + "\"}";
+    public static synchronized String skinPayload() {
+        if (skinMode != SkinMode.URL || skinUrl.isBlank()) {
+            return null;
         }
-        return null;
+        JsonObject payload = new JsonObject();
+        payload.addProperty("url", skinUrl);
+        payload.addProperty("model", skinSlim ? MODEL_SLIM : MODEL_CLASSIC);
+        return payload.toString();
     }
 
     private static void load() {

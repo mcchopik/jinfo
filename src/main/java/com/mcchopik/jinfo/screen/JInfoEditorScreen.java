@@ -9,6 +9,8 @@ import com.mcchopik.jinfo.text.Messages;
 import com.mcchopik.jinfo.text.ParsedProfile;
 import com.mcchopik.jinfo.text.Service;
 import com.mcchopik.jinfo.text.TextParser;
+import com.mcchopik.jinfo.util.TextLayout;
+import com.mcchopik.jinfo.util.UiColors;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -20,8 +22,6 @@ import net.minecraft.network.chat.Component;
 
 public class JInfoEditorScreen extends Screen {
 
-    private static final int MAX_LINES = 10;
-    private static final int MAX_CHARS = 500;
     private static final int LINE_H = 12;
     private static final int LINE_GAP = 2;
     private static final int MARGIN = 12;
@@ -29,12 +29,6 @@ public class JInfoEditorScreen extends Screen {
     private static final String[] COLOR_CODES = {
             "0", "1", "2", "3", "4", "5", "6", "7",
             "8", "9", "a", "b", "c", "d", "e", "f"
-    };
-    private static final int[] COLOR_HEX = {
-            0xFF000000, 0xFF0000AA, 0xFF00AA00, 0xFF00AAAA,
-            0xFFAA0000, 0xFFAA00AA, 0xFFFFAA00, 0xFFAAAAAA,
-            0xFF555555, 0xFF5555FF, 0xFF55FF55, 0xFF55FFFF,
-            0xFFFF5555, 0xFFFF55FF, 0xFFFFFF55, 0xFFFFFFFF
     };
 
     private final ApiClient api;
@@ -46,7 +40,7 @@ public class JInfoEditorScreen extends Screen {
 
     private EditBox hexField;
     private String status = "";
-    private int statusColor = 0xFFAAAAAA;
+    private int statusColor = UiColors.TEXT_MUTED;
     private String pendingText;
 
     private int textTop;
@@ -106,7 +100,7 @@ public class JInfoEditorScreen extends Screen {
         for (int i = 0; i < lines.size(); i++) {
             EditBox box = new EditBox(font, areaLeft, y, areaWidth, LINE_H,
                     Component.literal(Messages.s("editor_line") + (i + 1)));
-            box.setMaxLength(MAX_CHARS);
+            box.setMaxLength(ParsedProfile.MAX_CHARS);
             box.setValue(lines.get(i));
             final int idx = i;
             box.setResponder(v -> {
@@ -119,7 +113,7 @@ public class JInfoEditorScreen extends Screen {
             y += LINE_H + LINE_GAP;
         }
 
-        int controlsTop = textTop + MAX_LINES * (LINE_H + LINE_GAP) + 10;
+        int controlsTop = textTop + ParsedProfile.MAX_LINES * (LINE_H + LINE_GAP) + 10;
         layoutButtons(areaLeft, controlsTop);
 
         previewX = areaLeft + areaWidth + 10;
@@ -207,17 +201,30 @@ public class JInfoEditorScreen extends Screen {
         if (!v.startsWith("#")) {
             v = "#" + v;
         }
-        if (v.matches("#[0-9a-fA-F]{6}")) {
+        if (isHexColor(v)) {
             append("&#" + v.substring(1).toUpperCase());
         } else {
-            setStatus(Messages.s("editor_hex_invalid"), 0xFFFF5555);
+            setStatus(Messages.s("editor_hex_invalid"), UiColors.ERROR);
         }
+    }
+
+    private static boolean isHexColor(String value) {
+        if (value.length() != 7 || value.charAt(0) != '#') {
+            return false;
+        }
+        for (int i = 1; i < value.length(); i++) {
+            char c = Character.toLowerCase(value.charAt(i));
+            if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f'))) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private void addLine() {
         capture();
-        if (lines.size() >= MAX_LINES) {
-            setStatus(Messages.s("editor_limit_lines") + MAX_LINES, 0xFFFFAA00);
+        if (lines.size() >= ParsedProfile.MAX_LINES) {
+            setStatus(Messages.s("editor_limit_lines") + ParsedProfile.MAX_LINES, UiColors.WARN);
             return;
         }
         lines.add("");
@@ -229,7 +236,7 @@ public class JInfoEditorScreen extends Screen {
         lines.clear();
         lines.add("");
         rebuild();
-        setStatus(Messages.s("editor_text_cleared"), 0xFFAAAAAA);
+        setStatus(Messages.s("editor_text_cleared"), UiColors.TEXT_MUTED);
     }
 
     private EditBox focusedLine() {
@@ -247,10 +254,10 @@ public class JInfoEditorScreen extends Screen {
             return;
         }
         String v = box.getValue() + code;
-        if (v.length() <= MAX_CHARS) {
+        if (v.length() <= ParsedProfile.MAX_CHARS) {
             box.setValue(v);
         } else {
-            setStatus(Messages.s("editor_limit_chars"), 0xFFFFAA00);
+            setStatus(Messages.s("editor_limit_chars"), UiColors.WARN);
         }
     }
 
@@ -274,26 +281,26 @@ public class JInfoEditorScreen extends Screen {
         String text = joined();
         ParsedProfile parsed = parser.parse(text, JInfoConfig.language());
         if (parsed.overLimits()) {
-            setStatus(Messages.s("editor_over_limits"), 0xFFFF5555);
+            setStatus(Messages.s("editor_over_limits"), UiColors.ERROR);
             return;
         }
         String name = JInfoClient.selfName();
         if (name == null) {
-            setStatus(Messages.s("editor_nick_unknown"), 0xFFFF5555);
+            setStatus(Messages.s("editor_nick_unknown"), UiColors.ERROR);
             return;
         }
-        setStatus(Messages.s("editor_saving"), 0xFFAAAAAA);
+        setStatus(Messages.s("editor_saving"), UiColors.TEXT_MUTED);
         CompletableFuture.runAsync(() -> {
             try {
                 if (!api.isLoggedIn()) {
                     api.login(name);
                 }
                 api.putProfile(text);
-                onClient(() -> setStatus(Messages.s("editor_saved"), 0xFF55FF55));
+                onClient(() -> setStatus(Messages.s("editor_saved"), UiColors.OK));
             } catch (ApiException e) {
-                onClient(() -> setStatus(describe(e), 0xFFFF5555));
+                onClient(() -> setStatus(describe(e), UiColors.ERROR));
             } catch (Exception e) {
-                onClient(() -> setStatus(Messages.s("editor_error") + e.getMessage(), 0xFFFF5555));
+                onClient(() -> setStatus(Messages.s("editor_error") + e.getMessage(), UiColors.ERROR));
             }
         });
     }
@@ -323,7 +330,7 @@ public class JInfoEditorScreen extends Screen {
     private void setText(String text) {
         String[] parts = text.split("\n", -1);
         lines.clear();
-        for (int i = 0; i < parts.length && i < MAX_LINES; i++) {
+        for (int i = 0; i < parts.length && i < ParsedProfile.MAX_LINES; i++) {
             lines.add(parts[i]);
         }
         if (lines.isEmpty()) {
@@ -356,15 +363,15 @@ public class JInfoEditorScreen extends Screen {
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
-        graphics.fill(0, 0, width, height, 0xE6101418);
-        graphics.text(font, Messages.s("editor_title"), MARGIN, 12, 0xFFFFFFFF, true);
-        String counter = charCount() + " / " + MAX_CHARS + " " + Messages.s("editor_counter_chars") + ", "
-                + lines.size() + " / " + MAX_LINES + " " + Messages.s("editor_counter_lines");
-        graphics.text(font, counter, MARGIN, 24, 0xFFAAAAAA, false);
+        graphics.fill(0, 0, width, height, UiColors.EDITOR_OVERLAY);
+        graphics.text(font, Messages.s("editor_title"), MARGIN, 12, UiColors.TEXT, true);
+        String counter = charCount() + " / " + ParsedProfile.MAX_CHARS + " " + Messages.s("editor_counter_chars") + ", "
+                + lines.size() + " / " + ParsedProfile.MAX_LINES + " " + Messages.s("editor_counter_lines");
+        graphics.text(font, counter, MARGIN, 24, UiColors.TEXT_MUTED, false);
 
         if (previewW > 20 && previewBottom > previewY) {
             graphics.fill(previewX - 4, previewY - 14, width - MARGIN, previewBottom, 0xAA1E242B);
-            graphics.text(font, Messages.s("editor_preview"), previewX, previewY - 12, 0xFFFFFFFF, true);
+            graphics.text(font, Messages.s("editor_preview"), previewX, previewY - 12, UiColors.TEXT, true);
             drawPreview(graphics);
         }
 
@@ -383,24 +390,10 @@ public class JInfoEditorScreen extends Screen {
             if (y > previewBottom - 10) {
                 break;
             }
-            String line = fit(rawLine, previewW - 8);
-            graphics.text(font, line, previewX, y, 0xFFE6E8EC, false);
+            String line = TextLayout.fit(font, rawLine, previewW - 8);
+            graphics.text(font, line, previewX, y, UiColors.TEXT, false);
             y += lineStep;
         }
-    }
-
-    private String fit(String text, int maxWidth) {
-        if (font.width(text) <= maxWidth) {
-            return text;
-        }
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < text.length(); i++) {
-            if (font.width(sb.toString() + text.charAt(i)) > maxWidth - 6) {
-                break;
-            }
-            sb.append(text.charAt(i));
-        }
-        return sb + "…";
     }
 
     @Override

@@ -6,14 +6,15 @@ import com.mcchopik.jinfo.net.ApiClient;
 import com.mcchopik.jinfo.net.ApiException;
 import com.mcchopik.jinfo.net.PhotoTextures;
 import com.mcchopik.jinfo.net.ProfileData;
+import com.mcchopik.jinfo.net.SkinSpec;
 import com.mcchopik.jinfo.net.SkinTextures;
 import com.mcchopik.jinfo.text.Messages;
 import com.mcchopik.jinfo.text.ParsedProfile;
 import com.mcchopik.jinfo.text.Part;
 import com.mcchopik.jinfo.text.Service;
 import com.mcchopik.jinfo.text.TextParser;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import com.mcchopik.jinfo.util.TextLayout;
+import com.mcchopik.jinfo.util.UiColors;
 import com.mojang.authlib.GameProfile;
 import java.util.ArrayList;
 import java.util.List;
@@ -46,12 +47,10 @@ public class JInfoProfileScreen extends Screen {
     private PhotoTextures.Photo photo;
     private SkinViewer skinViewer;
     private String statusText = Messages.s("loading");
-    private int statusColor = 0xFFAAAAAA;
+    private int statusColor = UiColors.TEXT_MUTED;
     private boolean verified = false;
     private boolean loading = true;
 
-    private PlayerSkin remoteSkin;
-    private String remoteSkinJson;
     private String remoteSkinKey;
 
     private boolean hat = true;
@@ -103,6 +102,7 @@ public class JInfoProfileScreen extends Screen {
 
         skinViewer = createSkinViewer();
         setWidgets();
+        ensureLocalSkin();
 
         if (loading) {
             loadProfile();
@@ -127,13 +127,19 @@ public class JInfoProfileScreen extends Screen {
 
     private Supplier<PlayerSkin> skinSupplier() {
         return () -> {
-            if (remoteSkin != null) {
-                return remoteSkin;
+            if (remoteSkinKey != null) {
+                PlayerSkin remote = SkinTextures.get(remoteSkinKey);
+                if (remote != null) {
+                    return remote;
+                }
             }
             if (isSelfProfile()) {
                 String localSkin = getLocalSkinKey();
                 if (localSkin != null) {
-                    return SkinTextures.get(localSkin);
+                    PlayerSkin local = SkinTextures.get(localSkin);
+                    if (local != null) {
+                        return local;
+                    }
                 }
             }
             if (skinSource instanceof AbstractClientPlayer player) {
@@ -168,6 +174,20 @@ public class JInfoProfileScreen extends Screen {
             return null;
         }
         return SkinTextures.cacheKey(
+                JInfoConfig.skinMode() == JInfoConfig.SkinMode.URL ? JInfoConfig.skinUrl() : null,
+                JInfoConfig.skinMode() == JInfoConfig.SkinMode.FILE ? JInfoConfig.skinFile() : null,
+                JInfoConfig.skinSlim());
+    }
+
+    private void ensureLocalSkin() {
+        if (!isSelfProfile() || JInfoConfig.skinMode() == JInfoConfig.SkinMode.AUTO) {
+            return;
+        }
+        String key = getLocalSkinKey();
+        if (key == null || SkinTextures.get(key) != null) {
+            return;
+        }
+        SkinTextures.loadAsync(key,
                 JInfoConfig.skinMode() == JInfoConfig.SkinMode.URL ? JInfoConfig.skinUrl() : null,
                 JInfoConfig.skinMode() == JInfoConfig.SkinMode.FILE ? JInfoConfig.skinFile() : null,
                 JInfoConfig.skinSlim());
@@ -252,12 +272,12 @@ public class JInfoProfileScreen extends Screen {
 
     private void paintLink(GuiGraphicsExtractor graphics, PaintedButton button, boolean hovered,
                            int color, String label) {
-        int bg = hovered ? 0xFF232A33 : 0xFF1B2027;
+        int bg = hovered ? UiColors.PANEL_HOVER : UiColors.PANEL_ALT;
         graphics.fill(button.getX(), button.getY(), button.getRight(), button.getBottom(), bg);
         graphics.fill(button.getX(), button.getY(), button.getRight(), button.getY() + 2, color);
         int tw = font.width(label);
         graphics.text(font, label, button.getX() + (button.getWidth() - tw) / 2,
-                button.getY() + (button.getHeight() - 8) / 2, 0xFFE6E8EC, false);
+                button.getY() + (button.getHeight() - 8) / 2, UiColors.TEXT, false);
     }
 
     private String serviceLabel(String key) {
@@ -289,38 +309,15 @@ public class JInfoProfileScreen extends Screen {
                 onClient(() -> {
                     parsed = p;
                     photo = PhotoTextures.get(p.avatarUrl());
-                    remoteSkinJson = skinJson;
                     loading = false;
                     verified = data.verified();
                     statusText = verified ? Messages.s("verified") : Messages.s("unverified");
-                    statusColor = verified ? 0xFF55FF55 : 0xFFFFAA00;
+                    statusColor = verified ? UiColors.OK : UiColors.WARN;
                     setWidgets();
-                    if (skinJson != null && !skinJson.isBlank()) {
-                        try {
-                            JsonObject obj = JsonParser.parseString(skinJson).getAsJsonObject();
-                            String url = obj.has("url") ? obj.get("url").getAsString() : null;
-                            boolean slim = obj.has("model") && "slim".equals(obj.get("model").getAsString());
-                            remoteSkinKey = SkinTextures.cacheKey(url, null, slim);
-                            SkinTextures.loadAsync(remoteSkinKey, url, null, slim);
-                            CompletableFuture.runAsync(() -> {
-                                for (int i = 0; i < 200; i++) {
-                                    try { Thread.sleep(50); } catch (InterruptedException e) { break; }
-                                    if (SkinTextures.get(remoteSkinKey) != null) {
-                                        if (minecraft != null) {
-                                            minecraft.execute(() -> {
-                                                remoteSkin = SkinTextures.get(remoteSkinKey);
-                                                if (skinViewer != null) {
-                                                    // trigger repaint by setting a new supplier
-                                                    // skinViewer already uses the supplier
-                                                }
-                                            });
-                                        }
-                                        break;
-                                    }
-                                }
-                            });
-                        } catch (Exception ignored) {
-                        }
+                    SkinSpec spec = SkinSpec.parse(skinJson);
+                    if (spec != null) {
+                        remoteSkinKey = spec.cacheKey();
+                        SkinTextures.loadAsync(remoteSkinKey, spec.url(), null, spec.slim());
                     }
                 });
             } catch (ApiException e) {
@@ -328,13 +325,13 @@ public class JInfoProfileScreen extends Screen {
                     loading = false;
                     if (e.statusCode() == 404) {
                         statusText = Messages.s("not_filled");
-                        statusColor = 0xFFAAAAAA;
+                        statusColor = UiColors.TEXT_MUTED;
                     } else if (e.statusCode() == 429) {
                         statusText = Messages.s("rate_limited");
-                        statusColor = 0xFFFFAA00;
+                        statusColor = UiColors.WARN;
                     } else {
                         statusText = Messages.s("net_error");
-                        statusColor = 0xFFFF5555;
+                        statusColor = UiColors.ERROR;
                     }
                     setWidgets();
                 });
@@ -342,7 +339,7 @@ public class JInfoProfileScreen extends Screen {
                 onClient(() -> {
                     loading = false;
                     statusText = Messages.s("net_error");
-                    statusColor = 0xFFFF5555;
+                    statusColor = UiColors.ERROR;
                     setWidgets();
                 });
             }
@@ -350,7 +347,7 @@ public class JInfoProfileScreen extends Screen {
     }
 
     private void report() {
-        setStatus(Messages.s("loading"), 0xFFAAAAAA);
+        setStatus(Messages.s("loading"), UiColors.TEXT_MUTED);
         CompletableFuture.runAsync(() -> {
             try {
                 if (!api.isLoggedIn()) {
@@ -360,19 +357,19 @@ public class JInfoProfileScreen extends Screen {
                     }
                 }
                 api.report(uuid);
-                onClient(() -> setStatus(Messages.s("reported"), 0xFF55FF55));
+                onClient(() -> setStatus(Messages.s("reported"), UiColors.OK));
             } catch (ApiException e) {
                 onClient(() -> {
                     if (e.statusCode() == 429) {
-                        setStatus(Messages.s("already_reported"), 0xFFFFAA00);
+                        setStatus(Messages.s("already_reported"), UiColors.WARN);
                     } else if (e.statusCode() == 400) {
-                        setStatus(Messages.s("report_self"), 0xFFFF5555);
+                        setStatus(Messages.s("report_self"), UiColors.ERROR);
                     } else {
-                        setStatus(Messages.s("report_failed"), 0xFFFF5555);
+                        setStatus(Messages.s("report_failed"), UiColors.ERROR);
                     }
                 });
             } catch (Exception e) {
-                onClient(() -> setStatus(Messages.s("report_failed"), 0xFFFF5555));
+                onClient(() -> setStatus(Messages.s("report_failed"), UiColors.ERROR));
             }
         });
     }
@@ -392,9 +389,9 @@ public class JInfoProfileScreen extends Screen {
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
-        graphics.fill(0, 0, width, height, 0x99000000);
-        graphics.fill(panelX, panelY, panelX + panelW, panelY + panelH, 0xFF171B21);
-        graphics.fill(panelX, panelY, panelX + panelW, panelY + 2, 0xFF2F74C9);
+        graphics.fill(0, 0, width, height, UiColors.OVERLAY);
+        graphics.fill(panelX, panelY, panelX + panelW, panelY + panelH, UiColors.PANEL);
+        graphics.fill(panelX, panelY, panelX + panelW, panelY + 2, UiColors.BORDER);
 
         if (photo == null && parsed != null) {
             photo = PhotoTextures.get(parsed.avatarUrl());
@@ -407,33 +404,33 @@ public class JInfoProfileScreen extends Screen {
         }
 
         int textW = photo != null ? Math.max(60, infoW - PHOTO - 8) : infoW;
-        String name = fit(playerName, textW);
-        graphics.text(font, name, infoX, panelY + 12, 0xFFFFFFFF, true);
+        String name = TextLayout.fit(font, playerName, textW);
+        graphics.text(font, name, infoX, panelY + 12, UiColors.TEXT, true);
 
         String icon = parsed == null ? "" : (verified ? "[✓]" : "[?]");
         if (!icon.isEmpty()) {
             int nameW = font.width(name);
             if (nameW + 12 <= textW) {
                 graphics.text(font, icon, infoX + nameW + 4, panelY + 12,
-                        verified ? 0xFF55FF55 : 0xFFFFAA00, false);
+                        verified ? UiColors.OK : UiColors.WARN, false);
             }
         }
 
-        graphics.text(font, fit(statusText, textW), infoX, panelY + 26, statusColor, false);
+        graphics.text(font, TextLayout.fit(font, statusText, textW), infoX, panelY + 26, statusColor, false);
 
         if (parsed != null) {
             int y = panelY + 44;
             int maxLines = 8;
             List<String> lines = new ArrayList<>();
             for (String raw : parsed.plainText().split("\n", -1)) {
-                lines.addAll(wrap(raw, textW));
+                lines.addAll(TextLayout.wrap(font, raw, textW));
             }
             for (int i = 0; i < lines.size() && i < maxLines; i++) {
                 String line = lines.get(i);
                 if (i == maxLines - 1 && lines.size() > maxLines) {
                     line = line + "…";
                 }
-                graphics.text(font, line, infoX, y, 0xFFE6E8EC, false);
+                graphics.text(font, line, infoX, y, UiColors.TEXT, false);
                 y += 10;
             }
         }
@@ -441,49 +438,19 @@ public class JInfoProfileScreen extends Screen {
         super.extractRenderState(graphics, mouseX, mouseY, delta);
     }
 
-    private String fit(String text, int maxWidth) {
-        if (font.width(text) <= maxWidth) {
-            return text;
-        }
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < text.length(); i++) {
-            if (font.width(sb.toString() + text.charAt(i)) > maxWidth - 6) {
-                break;
-            }
-            sb.append(text.charAt(i));
-        }
-        return sb + "…";
-    }
-
     private int parseColor(String hex) {
         try {
             if (hex == null || hex.isBlank()) {
-                return 0xFF8899AA;
+                return UiColors.LINK_FALLBACK;
             }
-            String s = hex.startsWith("#") ? hex.substring(1) : hex;
-            return 0xFF000000 | Integer.parseInt(s, 16);
+            String value = hex.startsWith("#") ? hex.substring(1) : hex;
+            if (value.length() != 6) {
+                return UiColors.LINK_FALLBACK;
+            }
+            return 0xFF000000 | Integer.parseInt(value, 16);
         } catch (Throwable t) {
-            return 0xFF8899AA;
+            return UiColors.LINK_FALLBACK;
         }
-    }
-
-    private List<String> wrap(String text, int maxWidth) {
-        List<String> out = new ArrayList<>();
-        if (text.isEmpty()) {
-            out.add("");
-            return out;
-        }
-        StringBuilder line = new StringBuilder();
-        for (int i = 0; i < text.length(); i++) {
-            char c = text.charAt(i);
-            if (font.width(line.toString() + c) > maxWidth) {
-                out.add(line.toString());
-                line.setLength(0);
-            }
-            line.append(c);
-        }
-        out.add(line.toString());
-        return out;
     }
 
     @Override

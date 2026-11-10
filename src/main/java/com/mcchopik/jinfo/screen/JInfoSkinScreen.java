@@ -1,13 +1,10 @@
 package com.mcchopik.jinfo.screen;
 
-import com.mcchopik.jinfo.JInfoClient;
 import com.mcchopik.jinfo.config.JInfoConfig;
-import com.mcchopik.jinfo.net.ApiClient;
 import com.mcchopik.jinfo.net.SkinTextures;
 import com.mcchopik.jinfo.text.Messages;
-import java.io.File;
+import com.mcchopik.jinfo.util.UiColors;
 import java.util.Locale;
-import java.util.concurrent.CompletableFuture;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
@@ -23,19 +20,15 @@ public class JInfoSkinScreen extends Screen {
     private static final int PREVIEW_SIZE = 96;
 
     private final Screen parent;
-    private final ApiClient api;
 
     private EditBox sourceField;
-    private Button modeAutoBtn;
-    private Button modeUrlBtn;
-    private Button modeFileBtn;
     private Button modelBtn;
     private Button browseBtn;
     private Button loadBtn;
     private Button clearBtn;
     private SkinViewer previewViewer;
     private String statusText = "";
-    private int statusColor = 0xFFAAAAAA;
+    private int statusColor = UiColors.TEXT_MUTED;
     private boolean loading = false;
 
     private int panelX;
@@ -46,7 +39,6 @@ public class JInfoSkinScreen extends Screen {
     public JInfoSkinScreen(Screen parent) {
         super(Component.literal("JInfo"));
         this.parent = parent;
-        this.api = JInfoClient.api();
     }
 
     @Override
@@ -58,6 +50,7 @@ public class JInfoSkinScreen extends Screen {
         previewY = panelY + 36;
 
         buildWidgets();
+        ensureConfiguredSkin();
         updatePreview();
     }
 
@@ -92,13 +85,13 @@ public class JInfoSkinScreen extends Screen {
         sourceField = new EditBox(font, x, y, w, 20, Component.literal(""));
         sourceField.setMaxLength(512);
         sourceField.setValue(getSourceValue());
-        sourceField.setResponder(s -> {});
+        sourceField.setResponder(s -> updateModeButtons());
         addRenderableWidget(sourceField);
         y += 26;
 
         browseBtn = Button.builder(
                         Component.literal(Messages.s("skin_browse")),
-                        b -> browseFile())
+                        b -> SkinFilePicker.open(this::usePickedFile))
                 .bounds(x, y, w, 20)
                 .build();
         addRenderableWidget(browseBtn);
@@ -162,50 +155,58 @@ public class JInfoSkinScreen extends Screen {
 
     private void updateModeButtons() {
         boolean isAuto = JInfoConfig.skinMode() == JInfoConfig.SkinMode.AUTO;
-        boolean isUrl = JInfoConfig.skinMode() == JInfoConfig.SkinMode.URL;
         boolean isFile = JInfoConfig.skinMode() == JInfoConfig.SkinMode.FILE;
         sourceField.setVisible(!isAuto);
         browseBtn.visible = isFile;
         modelBtn.visible = !isAuto;
-        loadBtn.active = !isAuto && !getSourceValue().isBlank() && !loading;
+        String source = sourceField == null ? getSourceValue() : sourceField.getValue();
+        loadBtn.active = !isAuto && !source.isBlank() && !loading;
         clearBtn.active = !isAuto && !loading;
     }
 
-    private void browseFile() {
+    private void usePickedFile(String path) {
         if (JInfoConfig.skinMode() != JInfoConfig.SkinMode.FILE) {
             return;
         }
-        CompletableFuture.runAsync(() -> {
-            try {
-                java.awt.FileDialog dialog = new java.awt.FileDialog((java.awt.Frame) null, "Выберите PNG скин", java.awt.FileDialog.LOAD);
-                dialog.setFilenameFilter((dir, name) -> name.toLowerCase(Locale.ROOT).endsWith(".png"));
-                dialog.setVisible(true);
-                String file = dialog.getFile();
-                String dir = dialog.getDirectory();
-                if (file != null && dir != null) {
-                    String path = new File(dir, file).getAbsolutePath();
-                    if (minecraft != null) {
-                        minecraft.execute(() -> {
-                            sourceField.setValue(path);
-                            JInfoConfig.setSkinFile(path);
-                            updateModeButtons();
-                        });
-                    }
-                }
-            } catch (Throwable ignored) {
-            }
-        });
+        sourceField.setValue(path);
+        JInfoConfig.setSkinFile(path);
+        updateModeButtons();
+    }
+
+    private void ensureConfiguredSkin() {
+        if (JInfoConfig.skinMode() == JInfoConfig.SkinMode.AUTO) {
+            return;
+        }
+        String key = configuredKey();
+        if (key == null || SkinTextures.get(key) != null) {
+            return;
+        }
+        SkinTextures.loadAsync(key,
+                JInfoConfig.skinMode() == JInfoConfig.SkinMode.URL ? JInfoConfig.skinUrl() : null,
+                JInfoConfig.skinMode() == JInfoConfig.SkinMode.FILE ? JInfoConfig.skinFile() : null,
+                JInfoConfig.skinSlim(),
+                loaded -> updatePreview());
+    }
+
+    private String configuredKey() {
+        if (JInfoConfig.skinMode() == JInfoConfig.SkinMode.AUTO) {
+            return null;
+        }
+        return SkinTextures.cacheKey(
+                JInfoConfig.skinMode() == JInfoConfig.SkinMode.URL ? JInfoConfig.skinUrl() : null,
+                JInfoConfig.skinMode() == JInfoConfig.SkinMode.FILE ? JInfoConfig.skinFile() : null,
+                JInfoConfig.skinSlim());
     }
 
     private void loadSkin() {
         String src = sourceField.getValue().trim();
         if (src.isBlank()) {
-            setStatus(Messages.s("skin_error") + Messages.s("skin_invalid_url"), 0xFFFF5555);
+            setStatus(Messages.s("skin_error") + Messages.s("skin_invalid_url"), UiColors.ERROR);
             return;
         }
         loading = true;
         updateModeButtons();
-        setStatus(Messages.s("skin_loading"), 0xFFAAAAAA);
+        setStatus(Messages.s("skin_loading"), UiColors.TEXT_MUTED);
 
         String key;
         boolean slim = JInfoConfig.skinSlim();
@@ -213,7 +214,7 @@ public class JInfoSkinScreen extends Screen {
             if (!src.toLowerCase(Locale.ROOT).startsWith("https://")) {
                 loading = false;
                 updateModeButtons();
-                setStatus(Messages.s("skin_error") + Messages.s("skin_invalid_url"), 0xFFFF5555);
+                setStatus(Messages.s("skin_error") + Messages.s("skin_invalid_url"), UiColors.ERROR);
                 return;
             }
             JInfoConfig.setSkinUrl(src);
@@ -226,40 +227,24 @@ public class JInfoSkinScreen extends Screen {
         SkinTextures.loadAsync(key,
                 JInfoConfig.skinMode() == JInfoConfig.SkinMode.URL ? src : null,
                 JInfoConfig.skinMode() == JInfoConfig.SkinMode.FILE ? src : null,
-                slim);
-
-        CompletableFuture.runAsync(() -> {
-            for (int i = 0; i < 200 && loading; i++) {
-                try {
-                    Thread.sleep(50);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    break;
-                }
-                if (SkinTextures.get(key) != null || !SkinTextures.isLoading(key)) {
-                    break;
-                }
-            }
-            if (minecraft != null) {
-                minecraft.execute(() -> {
+                slim,
+                loaded -> {
                     loading = false;
-                    if (SkinTextures.get(key) != null) {
-                        setStatus(Messages.s("skin_loaded"), 0xFF55FF55);
+                    if (loaded != null) {
+                        setStatus(Messages.s("skin_loaded"), UiColors.OK);
                         updatePreview();
                     } else {
-                        setStatus(Messages.s("skin_error") + Messages.s("skin_invalid_dims"), 0xFFFF5555);
+                        setStatus(Messages.s("skin_error") + Messages.s("skin_invalid_dims"), UiColors.ERROR);
                     }
                     updateModeButtons();
                 });
-            }
-        });
     }
 
     private void clearSkin() {
         JInfoConfig.setSkinMode(JInfoConfig.SkinMode.AUTO);
         SkinTextures.clear();
         sourceField.setValue("");
-        setStatus(Messages.s("skin_cleared"), 0xFF55FF55);
+        setStatus(Messages.s("skin_cleared"), UiColors.OK);
         updateModeButtons();
         updatePreview();
     }
@@ -292,19 +277,19 @@ public class JInfoSkinScreen extends Screen {
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
-        graphics.fill(0, 0, width, height, 0x99000000);
-        graphics.fill(panelX, panelY, panelX + PANEL_W, panelY + PANEL_H, 0xFF171B21);
-        graphics.fill(panelX, panelY, panelX + PANEL_W, panelY + 2, 0xFF2F74C9);
+        graphics.fill(0, 0, width, height, UiColors.OVERLAY);
+        graphics.fill(panelX, panelY, panelX + PANEL_W, panelY + PANEL_H, UiColors.PANEL);
+        graphics.fill(panelX, panelY, panelX + PANEL_W, panelY + 2, UiColors.BORDER);
 
-        graphics.text(font, Messages.s("skin_title"), panelX + 16, panelY + 10, 0xFFFFFFFF, true);
-        graphics.text(font, Messages.s("skin_mode"), panelX + 16, panelY + 24, 0xFFB8C0CC, false);
+        graphics.text(font, Messages.s("skin_title"), panelX + 16, panelY + 10, UiColors.TEXT, true);
+        graphics.text(font, Messages.s("skin_mode"), panelX + 16, panelY + 24, UiColors.TEXT_LABEL, false);
 
         if (JInfoConfig.skinMode() != JInfoConfig.SkinMode.AUTO) {
-            graphics.text(font, Messages.s("skin_model"), panelX + 16, panelY + 88, 0xFFB8C0CC, false);
-            graphics.text(font, Messages.s("skin_url"), panelX + 16, panelY + 62, 0xFFB8C0CC, false);
+            graphics.text(font, Messages.s("skin_model"), panelX + 16, panelY + 88, UiColors.TEXT_LABEL, false);
+            graphics.text(font, Messages.s("skin_url"), panelX + 16, panelY + 62, UiColors.TEXT_LABEL, false);
         }
         if (JInfoConfig.skinMode() == JInfoConfig.SkinMode.FILE) {
-            graphics.text(font, Messages.s("skin_local_note"), panelX + 16, panelY + PANEL_H - 50, 0xFF888888, false);
+            graphics.text(font, Messages.s("skin_local_note"), panelX + 16, panelY + PANEL_H - 50, UiColors.TEXT_DIM, false);
         }
 
         if (!statusText.isBlank()) {
