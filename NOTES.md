@@ -11,9 +11,9 @@
   `GET /profile/:uuid` возвращает `skin`.
 - **Публичный API** — `GET /public/profile/:uuid` без авторизации для серверных
   компонентов; также добавлен `profiles.skin TEXT`.
-- **Серверные компоненты** — ветка `server` (Fabric 1.21.4) и ветка `paper`
-  (Paper 1.21.4): веб-просмотр профилей без клиента, `/jinfo`, JSON API.
-  Релизы `server-v0.1.0` и `paper-v0.1.0` собраны GitHub Actions.
+- **Серверные компоненты** — ветка `server` (Fabric 26.2) и ветка `paper`
+  (Paper 26.2): веб-просмотр профилей без клиента, `/jinfo`, JSON API.
+  Релизы `server-v0.2.0` и `paper-v0.2.0` собраны GitHub Actions.
 - **SPKI-фикс** — offline-авторизация принимает Ed25519 public key в X.509/SPKI
   (`MCowBQYDK2Vw...`) и в raw-формате; Java-подпись проверена.
 
