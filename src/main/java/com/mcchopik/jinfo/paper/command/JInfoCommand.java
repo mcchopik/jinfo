@@ -115,7 +115,7 @@ public class JInfoCommand implements CommandExecutor, TabCompleter {
                 }
                 HttpRequest request = HttpRequest.newBuilder(URI.create(base + "/public/profile/" + uuid))
                         .timeout(Duration.ofSeconds(10))
-                        .header("User-Agent", "jinfo-paper/0.1.0")
+                        .header("User-Agent", "jinfo-paper/0.2.0")
                         .GET()
                         .build();
                 HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());

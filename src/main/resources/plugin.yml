@@ -1,7 +1,7 @@
 name: JInfo Paper
 version: ${version}
 main: com.mcchopik.jinfo.paper.JInfoPaperPlugin
-api-version: '1.21'
+api-version: '26.2'
 description: Server-side player profile viewer with HTTP API and web UI.
 author: mcchopik
 website: https://github.com/mcchopik/jinfo
