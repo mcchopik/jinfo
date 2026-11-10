@@ -68,6 +68,7 @@ jobs:
           set -euo pipefail
           version="${GITHUB_REF_NAME#v}"
           jar="release-artifact/jinfo-${version}.jar"
+          asset="JInfo-Client-${version}.jar"
 
           if [ ! -f "${jar}" ]; then
             echo "::error::Expected ${jar}, but the artifact contains:"
@@ -75,17 +76,18 @@ jobs:
             exit 1
           fi
 
-          sha="$(sha256sum "${jar}" | cut -d' ' -f1)"
-          printf '{\n  "version": "%s",\n  "file": "jinfo-%s.jar",\n  "sha256": "%s"\n}\n' \
-            "${version}" "${version}" "${sha}" > update.json
+          cp "${jar}" "${asset}"
+          sha="$(sha256sum "${asset}" | cut -d' ' -f1)"
+          printf '{\n  "version": "%s",\n  "file": "%s",\n  "sha256": "%s"\n}\n' \
+            "${version}" "${asset}" "${sha}" > update.json
 
           notes=".github/release-notes/${version}.md"
           if [ -f "${notes}" ]; then
-            gh release create "${GITHUB_REF_NAME}" "${jar}" update.json \
-              --title "jinfo ${version}" \
+            gh release create "${GITHUB_REF_NAME}" "${asset}" update.json \
+              --title "JInfo ${version}" \
               --notes-file "${notes}"
           else
-            gh release create "${GITHUB_REF_NAME}" "${jar}" update.json \
-              --title "jinfo ${version}" \
+            gh release create "${GITHUB_REF_NAME}" "${asset}" update.json \
+              --title "JInfo ${version}" \
               --generate-notes
           fi
