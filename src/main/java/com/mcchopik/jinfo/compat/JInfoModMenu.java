@@ -8,6 +8,6 @@ public final class JInfoModMenu implements ModMenuApi {
 
     @Override
     public ConfigScreenFactory<?> getModConfigScreenFactory() {
-        return JInfoSettingsScreen::new;
+        return parent -> new JInfoSettingsScreen(parent);
     }
 }

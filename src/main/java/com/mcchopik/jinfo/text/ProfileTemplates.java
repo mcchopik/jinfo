@@ -8,6 +8,11 @@ public enum ProfileTemplates {
                     + "{twitch} @mynick\n"
                     + "{discord} https://discord.gg/shyminers\n"
                     + "{telegram} @mynick",
+            "&lСтрэмер&r — стрымлю і размаўляю з чатам.\n"
+                    + "{youtube} @mynick\n"
+                    + "{twitch} @mynick\n"
+                    + "{discord} https://discord.gg/shyminers\n"
+                    + "{telegram} @mynick",
             "&lСтрімер&r — стрімлю та спілкуюся з чатом.\n"
                     + "{youtube} @mynick\n"
                     + "{twitch} @mynick\n"
@@ -21,6 +26,11 @@ public enum ProfileTemplates {
 
     DEVELOPER("developer",
             "&lРазработчик&r — пишу моды на Fabric.\n"
+                    + "{github} @mynick\n"
+                    + "{modrinth} @mynick\n"
+                    + "{discord} https://discord.gg/shyminers\n"
+                    + "{link:Сайт} https://example.com",
+            "&lРаспрацоўшчык&r — пішу моды на Fabric.\n"
                     + "{github} @mynick\n"
                     + "{modrinth} @mynick\n"
                     + "{discord} https://discord.gg/shyminers\n"
@@ -41,6 +51,10 @@ public enum ProfileTemplates {
                     + "{steam} @mynick\n"
                     + "{discord} https://discord.gg/shyminers\n"
                     + "{youtube} @mynick",
+            "&lГеймер&r — Minecraft і не толькі.\n"
+                    + "{steam} @mynick\n"
+                    + "{discord} https://discord.gg/shyminers\n"
+                    + "{youtube} @mynick",
             "&lГеймер&r — Minecraft і не лише.\n"
                     + "{steam} @mynick\n"
                     + "{discord} https://discord.gg/shyminers\n"
@@ -54,6 +68,9 @@ public enum ProfileTemplates {
             "&lПривет!&r Это мой профиль.\n"
                     + "{discord} https://discord.gg/shyminers\n"
                     + "{telegram} @mynick",
+            "&lПрывітанне!&r Гэта мой профіль.\n"
+                    + "{discord} https://discord.gg/shyminers\n"
+                    + "{telegram} @mynick",
             "&lПривіт!&r Це мій профіль.\n"
                     + "{discord} https://discord.gg/shyminers\n"
                     + "{telegram} @mynick",
@@ -63,12 +80,14 @@ public enum ProfileTemplates {
 
     private final String id;
     private final String ru;
+    private final String be;
     private final String uk;
     private final String en;
 
-    ProfileTemplates(String id, String ru, String uk, String en) {
+    ProfileTemplates(String id, String ru, String be, String uk, String en) {
         this.id = id;
         this.ru = ru;
+        this.be = be;
         this.uk = uk;
         this.en = en;
     }
@@ -84,6 +103,7 @@ public enum ProfileTemplates {
     public String text(Lang lang) {
         return switch (lang) {
             case RU -> ru;
+            case BE -> be;
             case UK -> uk;
             case EN -> en;
         };

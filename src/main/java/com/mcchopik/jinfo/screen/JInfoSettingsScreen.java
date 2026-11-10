@@ -56,7 +56,7 @@ public class JInfoSettingsScreen extends Screen {
 
         int langY = panelY + 64;
         int gap = 6;
-        int lw = (w - 2 * gap) / 3;
+        int lw = (w - 3 * gap) / 4;
         Lang current = JInfoConfig.language();
         Lang[] langs = Lang.values();
         for (int i = 0; i < langs.length; i++) {
@@ -77,15 +77,20 @@ public class JInfoSettingsScreen extends Screen {
         addRenderableWidget(Button.builder(Component.literal(Messages.s("open_web")), b -> openWeb())
                 .bounds(x, actionY + 26, w, 20)
                 .build());
-        addRenderableWidget(Button.builder(Component.literal(Messages.s("skin_title")), b -> openSkin())
+        Button stopButton = Button.builder(Component.literal(Messages.s("stop_web")), b -> stopWeb())
                 .bounds(x, actionY + 52, w, 20)
+                .build();
+        stopButton.active = WebServer.isRunning();
+        addRenderableWidget(stopButton);
+        addRenderableWidget(Button.builder(Component.literal(Messages.s("skin_title")), b -> openSkin())
+                .bounds(x, actionY + 78, w, 20)
                 .build());
         int half = (w - 8) / 2;
         addRenderableWidget(Button.builder(Component.literal(Messages.s("my_profile")), b -> openMyProfile())
-                .bounds(x, actionY + 78, half, 20)
+                .bounds(x, actionY + 104, half, 20)
                 .build());
         addRenderableWidget(Button.builder(Component.literal(Messages.s("change_nick")), b -> openNickEditor())
-                .bounds(x + half + 8, actionY + 78, w - half - 8, 20)
+                .bounds(x + half + 8, actionY + 104, w - half - 8, 20)
                 .build());
 
         addRenderableWidget(Button.builder(Component.literal(Messages.s("back")), b -> onClose())
@@ -131,6 +136,7 @@ public class JInfoSettingsScreen extends Screen {
                 String url = WebServer.start(JInfoClient.api(), name);
                 onClient(() -> {
                     note = url;
+                    rebuild();
                     try {
                         Util.getPlatform().openUri(URI.create(url));
                     } catch (Throwable ignored) {
@@ -142,6 +148,12 @@ public class JInfoSettingsScreen extends Screen {
         });
     }
 
+    private void stopWeb() {
+        WebServer.stop("settings");
+        note = Messages.s("web_stopped");
+        rebuild();
+    }
+
     @Override
     public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
         graphics.fill(0, 0, width, height, UiColors.OVERLAY);
@@ -151,7 +163,7 @@ public class JInfoSettingsScreen extends Screen {
         graphics.text(font, Messages.s("settings"), panelX + 16, panelY + 10, UiColors.TEXT, true);
         graphics.text(font, Messages.s("language"), panelX + 16, panelY + 52, UiColors.TEXT_LABEL, false);
 
-        int y = panelY + 180;
+        int y = panelY + 236;
         for (String line : TextLayout.wrap(font, Messages.s("key_hint"), panelW - 32)) {
             graphics.text(font, line, panelX + 16, y, UiColors.TEXT_LABEL, false);
             y += 10;

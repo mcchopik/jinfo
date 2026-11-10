@@ -20,6 +20,8 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -27,7 +29,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public final class WebServer {
 
-    private static final long IDLE_TIMEOUT_MS = 30L * 60L * 1000L;
+    private static final long IDLE_TIMEOUT_MS = 2L * 60L * 1000L;
     private static final int MAX_BODY = 20_000;
 
     private static WebServer instance;
@@ -49,6 +51,7 @@ public final class WebServer {
     private volatile boolean closed;
 
     private ScheduledExecutorService watchdog;
+    private ExecutorService executor;
 
     private WebServer(HttpServer server, int port, ApiClient api, String username) throws IOException {
         this.server = server;
@@ -110,12 +113,13 @@ public final class WebServer {
     }
 
     private void register() {
-        server.setExecutor(Executors.newFixedThreadPool(4, r -> {
+        executor = Executors.newFixedThreadPool(4, r -> {
             Thread t = new Thread(r);
             t.setDaemon(true);
             t.setName("jinfo-web");
             return t;
-        }));
+        });
+        server.setExecutor(executor);
         server.createContext("/", this::handle);
     }
 
@@ -130,7 +134,7 @@ public final class WebServer {
             if (System.currentTimeMillis() - lastRequest > IDLE_TIMEOUT_MS) {
                 shutdown();
             }
-        }, 60, 60, TimeUnit.SECONDS);
+        }, 10, 10, TimeUnit.SECONDS);
     }
 
     private void shutdown() {
@@ -144,6 +148,9 @@ public final class WebServer {
         }
         if (watchdog != null) {
             watchdog.shutdownNow();
+        }
+        if (executor != null) {
+            executor.shutdownNow();
         }
     }
 
@@ -176,6 +183,7 @@ public final class WebServer {
                 case "/profile" -> handleProfile(ex);
                 case "/preview" -> handlePreview(ex);
                 case "/save" -> handleSave(ex);
+                case "/close" -> handleClose(ex);
                 default -> send(ex, 404, "text/plain", new byte[0]);
             }
         } catch (Exception e) {
@@ -289,6 +297,14 @@ public final class WebServer {
             out.addProperty("error", e.getMessage());
         }
         json(ex, out);
+    }
+
+
+    private void handleClose(HttpExchange ex) throws IOException {
+        JsonObject out = new JsonObject();
+        out.addProperty("ok", true);
+        json(ex, out);
+        CompletableFuture.runAsync(() -> stop("browser"));
     }
 
     private boolean validHost(String host) {

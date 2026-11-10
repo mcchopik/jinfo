@@ -26,6 +26,9 @@
   "suggests": {
     "modmenu": "*"
   },
+  "recommends": {
+    "modmenu": ">=20.0.3"
+  },
   "depends": {
     "fabricloader": ">=0.20.1",
     "minecraft": "~26.2",

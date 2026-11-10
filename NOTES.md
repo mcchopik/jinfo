@@ -34,10 +34,12 @@
   кнопки включения слоёв шляпы, куртки, рукавов и штанов; скин всегда соответствует
   текущему скину игрока.
 - **Шаблоны/предпросмотр/Mod Menu** — `ProfileTemplates` (streamer/developer/gamer/simple,
-  ru/uk/en), `/jinfo template <id>`, `/jinfo preview [ник]` (открывает полный экран),
+  ru/be/uk/en), `/jinfo template <id>`, `/jinfo preview [ник]` (открывает полный экран),
   кнопка «Шаблоны» в редакторе (`JInfoTemplateScreen`), локализация редактора и `/jinfo help`
-  (ru/uk/en), Mod Menu entrypoint + `JInfoSettingsScreen` с кнопками (жест, 3 языка,
-  редактор/веб/мой профиль). В профиль/карточку добавлен авто-логин перед запросом.
+  (ru/be/uk/en), Mod Menu entrypoint + `JInfoSettingsScreen` с кнопками (жест, 4 языка,
+  редактор/веб/стоп-веб/мой профиль). В профиль/карточку добавлен авто-логин перед запросом.
+- **Веб-туннель** — `/jinfo web stop`, кнопка в настройках, `sendBeacon /close` после 60 с
+  в фоне и idle-timeout 2 минуты; executor/watchdog останавливаются вместе с сервером.
 - **Фикс ника на пиратке** — `MinecraftSession.currentUsername()` теперь берёт ник
   локального игрока (`getName` → `getGameProfile` → `getScoreboardName`), затем сессию,
   затем пользователя лаунчера; `/jinfo web` и `/jinfo me` больше не падают с

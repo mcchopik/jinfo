@@ -7,6 +7,7 @@ import java.util.Map;
 public final class Messages {
 
     private static final Map<String, String[]> DICT = new HashMap<>();
+    private static final Map<String, String> BE = new HashMap<>();
 
     static {
         put("loading", "Загрузка...", "Завантаження...", "Loading...");
@@ -97,6 +98,8 @@ public final class Messages {
 
         put("open_editor", "Открыть редактор", "Відкрити редактор", "Open editor");
         put("open_web", "Открыть веб-редактор", "Відкрити веб-редактор", "Open web editor");
+        put("stop_web", "Остановить веб-сервер", "Зупинити веб-сервер", "Stop web server");
+        put("web_stopped", "Веб-сервер остановлен.", "Веб-сервер зупинено.", "Web server stopped.");
         put("my_profile", "Мой профиль", "Мій профіль", "My profile");
         put("change_nick", "Свой ник", "Свій нік", "My nickname");
         put("nick_title", "Ник игрока", "Нік гравця", "Player nickname");
@@ -206,6 +209,142 @@ public final class Messages {
                         + "Photo: {photo} https://example.com/photo.png\n"
                         + "Colours: &0-&f, &l &o &n &m &r, hex &#RRGGBB; &k is not allowed.\n"
                         + "Limits: 500 characters, 10 lines, 6 links.");
+
+        putBe("loading", "Загрузка...");
+        putBe("not_filled", "Профіль не запоўнены");
+        putBe("net_error", "Памылка сеткі");
+        putBe("rate_limited", "Занадта часта, пачакай");
+        putBe("verified", "Профіль пацверджаны");
+        putBe("unverified", "Профіль (не пацверджаны)");
+
+        putBe("open_profile", "Адкрыць профіль");
+        putBe("close", "Закрыць");
+        putBe("report", "Паскардзіцца");
+        putBe("reported", "Скарга адпраўлена");
+        putBe("already_reported", "Скарга ўжо адпраўлена сёння");
+        putBe("report_self", "Нельга паскардзіцца на сябе");
+        putBe("report_failed", "Не ўдалося адправіць скаргу");
+
+        putBe("open_title", "Адкрыць спасылку?");
+        putBe("service", "Сэрвіс");
+        putBe("domain", "Домен");
+        putBe("open", "Адкрыць");
+        putBe("cancel", "Скасаваць");
+        putBe("suspicious", "Увага: адрас выглядае падазрона.");
+
+        putBe("settings", "Налады JInfo");
+        putBe("gesture", "Жэст Shift+ПКМ");
+        putBe("on", "Укл");
+        putBe("off", "Выкл");
+        putBe("language", "Мова");
+        putBe("key_hint", "Клавіша «P» — адкрыць мой профіль (змяняецца ў кіраванні).");
+        putBe("back", "Назад");
+
+        putBe("templates", "Шаблоны");
+        putBe("photo", "Фота");
+        putBe("photo_invalid", "Патрэбна прамая https-спасылка на выяву.");
+        putBe("photo_set", "Фота профілю абноўлена.");
+        putBe("photo_removed", "Фота профілю прыбрана.");
+        putBe("layer_hat", "Капялюш");
+        putBe("layer_jacket", "Куртка");
+        putBe("layer_sleeves", "Рукавы");
+        putBe("layer_pants", "Штаны");
+        putBe("template_hint", "Выберы шаблон — ён заменіць тэкст рэдактара.");
+        putBe("template.streamer", "Стрэмер");
+        putBe("template.developer", "Распрацоўшчык");
+        putBe("template.gamer", "Геймер");
+        putBe("template.simple", "Просты");
+        putBe("template_applied", "Шаблон ужыты. Не забудзь замяніць нікі.");
+        putBe("template_unknown", "Невядомы шаблон.");
+
+        putBe("editor_title", "JInfo — рэдактар профілю");
+        putBe("editor_line", "Радок ");
+        putBe("editor_add_line", "Дадаць радок");
+        putBe("editor_save", "Захаваць");
+        putBe("editor_clear", "Ачысціць");
+        putBe("editor_cancel", "Скасаваць");
+        putBe("editor_templates", "Шаблоны");
+        putBe("editor_hex_invalid", "Няверны hex-колер. Фармат: #RRGGBB");
+        putBe("editor_limit_lines", "Дасягнуты ліміт радкоў: ");
+        putBe("editor_text_cleared", "Тэкст ачышчаны.");
+        putBe("editor_limit_chars", "Дасягнуты ліміт сімвалаў.");
+        putBe("editor_over_limits", "Перавышаны ліміты: 500 сімвалаў / 10 радкоў / 6 спасылак.");
+        putBe("editor_nick_unknown", "Не ўдалося вызначыць нік гульца.");
+        putBe("editor_saving", "Захаванне...");
+        putBe("editor_saved", "Профіль захаваны.");
+        putBe("editor_error", "Памылка: ");
+        putBe("editor_preview", "Прадпрагляд");
+        putBe("editor_counter_chars", "сімвалаў");
+        putBe("editor_counter_lines", "радкоў");
+
+        putBe("open_editor", "Адкрыць рэдактар");
+        putBe("open_web", "Адкрыць вэб-рэдактар");
+        putBe("my_profile", "Мой профіль");
+        putBe("change_nick", "Свой нік");
+        putBe("nick_title", "Нік гульца");
+        putBe("nick_hint", "Не ўдалося вызначыць нік аўтаматычна. Увядзіце яго:");
+        putBe("nick_remember", "Запомніць нік");
+        putBe("nick_continue", "Працягнуць");
+        putBe("nick_invalid", "Увядзіце нік (да 16 сімвалаў).");
+        putBe("preview_opening", "Адкрываю профіль...");
+
+        putBe("skin_title", "Налады скіна");
+        putBe("skin_mode", "Рэжым");
+        putBe("skin_mode_auto", "Аўта (свой скін)");
+        putBe("skin_mode_url", "Па спасылцы");
+        putBe("skin_mode_file", "З файла");
+        putBe("skin_model", "Мадэль");
+        putBe("skin_model_classic", "Класіка");
+        putBe("skin_model_slim", "Худая (Slim)");
+        putBe("skin_url", "URL скіна (https://...)");
+        putBe("skin_file", "Шлях да PNG файла");
+        putBe("skin_browse", "Выбраць файл...");
+        putBe("skin_load", "Загрузіць");
+        putBe("skin_clear", "Скінуць");
+        putBe("skin_preview", "Прадпрагляд");
+        putBe("skin_loading", "Загрузка...");
+        putBe("skin_loaded", "Скін загружаны.");
+        putBe("skin_error", "Памылка загрузкі: ");
+        putBe("skin_invalid_dims", "Скін павінен быць 64x64 або 64x32 пікселяў.");
+        putBe("skin_invalid_url", "Патрэбна прамая https-спасылка на PNG.");
+        putBe("skin_file_not_found", "Файл не знойдзены.");
+        putBe("skin_applied", "Скін ужыты. Захаваецца пры наступным захаванні профілю.");
+        putBe("skin_cleared", "Скін скінуты да аўтаматычнага.");
+        putBe("skin_local_note", "Лакальны файл не публікуецца ў профіль.");
+
+        putBe("stop_web", "Спыніць вэб-сервер");
+        putBe("web_stopped", "Вэб-сервер спынены.");
+
+        putBe("err_rate", "Занадта часта. Пачакай трохі.");
+        putBe("err_auth", "Не ўдалося аўтарызавацца.");
+        putBe("err_not_filled", "Профіль не запоўнены.");
+        putBe("err_generic", "Памылка");
+
+        putBe("help",
+                "=== JInfo — профіль гульца ===\n"
+                        + "/jinfo help — гэта даведка\n"
+                        + "/jinfo edit — рэдактар у гульні\n"
+                        + "/jinfo web — рэдактар у браўзеры\n"
+                        + "/jinfo template <id> — гатовы шаблон\n"
+                        + "/jinfo photo <url> — фота профілю (прамая спасылка)\n"
+                        + "/jinfo preview [нік] — як выглядае профіль\n"
+                        + "/jinfo set <тэкст> — хутка задаць тэкст\n"
+                        + "/jinfo me — мой профіль\n"
+                        + "/jinfo view <нік> — профіль гульца\n"
+                        + "/jinfo clear — выдаліць профіль\n"
+                        + "/jinfo settings — мова і жэст Shift+ПКМ\n"
+                        + "/jinfo update — праверыць абнаўленні\n"
+                        + "--- Плэйсхолдары ---\n"
+                        + "{youtube}, {twitch}, {discord}, {telegram}, {tiktok}, {instagram}, {x}, {github}, {steam}, {vk}, {reddit}, {kick}, {boosty}, {donationalerts}, {modrinth}\n"
+                        + "Пасля плэйсхолдара — @нік або спасылка. Прыклад: {youtube} @nick\n"
+                        + "Універсальна: {link:Назва} https://example.com\n"
+                        + "Фота: {photo} https://example.com/photo.png\n"
+                        + "Колеры: &0-&f, &l &o &n &m &r, hex &#RRGGBB; &k забаронены.\n"
+                        + "Ліміты: 500 сімвалаў, 10 радкоў, 6 спасылак.");
+    }
+
+    private static void putBe(String key, String be) {
+        BE.put(key, be);
     }
 
     private Messages() {
@@ -221,7 +360,12 @@ public final class Messages {
             return key;
         }
         Lang lang = language();
-        return values[Math.min(lang.ordinal(), values.length - 1)];
+        return switch (lang) {
+            case RU -> values[0];
+            case BE -> BE.getOrDefault(key, values[0]);
+            case UK -> values[1];
+            case EN -> values[2];
+        };
     }
 
     private static Lang language() {

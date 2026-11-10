@@ -2,6 +2,7 @@ package com.mcchopik.jinfo.text;
 
 public enum Lang {
     RU("ru"),
+    BE("be"),
     UK("uk"),
     EN("en");
 
@@ -20,6 +21,9 @@ public enum Lang {
             return RU;
         }
         String c = code.trim().toLowerCase();
+        if (c.startsWith("be")) {
+            return BE;
+        }
         if (c.startsWith("uk") || c.startsWith("ua")) {
             return UK;
         }

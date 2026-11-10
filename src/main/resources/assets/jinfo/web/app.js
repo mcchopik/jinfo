@@ -237,4 +237,21 @@
   loadProfile();
   setInterval(ping, 5000);
   ping();
+
+  var hideTimer = null;
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) {
+      hideTimer = setTimeout(function () {
+        if (navigator.sendBeacon) {
+          navigator.sendBeacon(base + '/close');
+        }
+      }, 60000);
+    } else {
+      if (hideTimer) {
+        clearTimeout(hideTimer);
+        hideTimer = null;
+      }
+      ping();
+    }
+  });
 })();
