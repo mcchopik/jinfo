@@ -1,133 +1,47 @@
 # JInfo
 
-Клиентский Fabric-мод для Minecraft **26.2** с открытым исходным кодом: этот мод позволяет установить короткий профиль игрока (до 500 символов,
-10 строк, 6 ссылок), который виден и лицензиям,и пиратке.
-## Возможности
+JInfo adds short player profiles to Minecraft **26.2**: up to 500 characters, 10 lines and 6 links. Profiles work for both premium and offline accounts.
 
-- **Shift + ПКМ по игроку** — компактная карточка с головой из скина и ником.
-  Наведение на голову показывает оформленный текст профиля (цвета, подписи сервисов;
-  ссылки в подсказке не кликабельны).
-- **Клик по голове** — полный экран: 3D-скин игрока (вращается мышью, слои шляпы,
-  куртки, рукавов и штанов включаются кнопками), ник, статус, текст, фото и кнопки
-  сервисов в их цветах. Клик по кнопке сначала открывает окно «Открыть ссылку?
-  Домен: …» — автоматически ссылки никогда не открываются.
-- **Клавиша `P`** (переназначается в «Управлении») — открыть свой профиль.
-- **Скин в профиле** — в настройках (Mod Menu или `/jinfo settings`) можно выбрать
-  режим скина: автоматически (как у игрока), по https-ссылке или локальному PNG-файлу;
-  модель classic/slim, предпросмотр в 3D. Скин из профиля видят другие игроки в карточке
-  и полном экране; в режиме «авто» мод совместим с другими скин-модами.
-- **`/jinfo`** — все действия из чата:
-  - `help` — справка;
-  - `edit` — редактор в игре (цвета, стили, сервисы, живой предпросмотр);
-  - `web` — локальный редактор в браузере (`/jinfo web stop` — остановить);
-  - `template <id>` — поставить готовый шаблон (streamer/developer/gamer/simple);
-  - `photo <url>` — добавить своё фото в профиль (прямая https-ссылка на картинку,
-    `photo off` — убрать);
-  - `preview [ник]` — открыть профиль так, как его видят другие;
-  - `set <текст>` — быстро задать текст;
-  - `me` / `view <ник>` — показать свой / чужой профиль;
-  - `clear` — удалить свой профиль;
-  - `settings` — язык (ru/be/uk/en), выключатель жеста Shift+ПКМ, свой ник и остановка веб-сервера;
-  - `update` — проверить обновления.
-- **Своё фото** — прямая https-ссылка на картинку добавляется к информации профиля
-  в полном экране и веб-редакторе: `/jinfo photo <url>` или кнопка «Фото» в редакторе /
-  `{photo} https://...` в тексте. Голова в карточке всегда показывает скин игрока,
-  поэтому фото его не заменяет.
-- **Готовые шаблоны** (стример, разработчик, геймер, простой) на ru/be/uk/en —
-  в редакторе кнопкой «Шаблоны» или командой `/jinfo template <id>`.
-- **Mod Menu** — если установлен, в списке модов появляется кнопка настроек:
-  жест Shift+ПКМ, язык (RU/BE/UK/EN) и быстрые кнопки «редактор», «веб-редактор»,
-  «остановить веб-сервер», «мой профиль», «свой ник». Если мод не смог определить ник
-  автоматически, он спросит его и запомнит. Без Mod Menu всё доступно через `/jinfo settings`.
-- **Веб-сервер не мешает игре** — туннель закрывается кнопкой «Остановить веб-сервер»,
-  сам через 2 минуты без запросов и при уходе в фон вкладки браузера.
-- **Два типа аккаунтов**: UUID v4 подтверждается через Mojang (joinServer + hasJoined),
-  UUID v3 (offline) — подписью Ed25519 локальным ключом. Работает и без сессии Mojang.
-- **Безопасность**: только https; запрещены `javascript:`, `file:`, localhost, IP-адреса
-  и ссылки с логином (`user@host`); для встроенных сервисов домен обязан совпадать со
-  списком; подозрительные адреса (сокращатели, punycode) помечаются в окне подтверждения.
-  Текст очищается от управляющих и невидимых символов.
-- **Кэш и батчи**: LRU 200, TTL 10 минут, запросы пачками до 50 UUID.
-- **Обновления**: при входе в игру мод проверяет последний GitHub Release и сообщает
-  в чат, если вышла новая версия; вручную — `/jinfo update`. Скачивание и установка
-  остаются за вами (ссылка на релиз в сообщении).
+## Components
 
-## Серверные компоненты
+- **Client mod** — Fabric client mod with profile cards, a 3D profile screen, an in-game editor and a local browser editor.
+- **Server component** — Fabric server mod and Paper plugin that provide JInfo profiles through chat commands. The server component does **not** open a web page and does **not** require the client mod.
 
-Профили можно смотреть **без клиентского мода** через браузер:
+## Languages
 
-- **Fabric-сервер (26.2)** — ветка `server`, релиз `jinfo-server 0.2.0`:
-  https://github.com/mcchopik/jinfo/releases/tag/server-v0.2.0
-- **Paper-плагин (26.2)** — ветка `paper`, релиз `jinfo-paper 0.2.0`:
-  https://github.com/mcchopik/jinfo/releases/tag/paper-v0.2.0
+English is the default language.
 
-Оба поднимают веб-сервер (по умолчанию порт `8765`) со списком профилей,
-страницей игрока и JSON API; есть команды `/jinfo`. Инструкции — в README
-соответствующих веток.
+| Language | Client | Server |
+| --- | --- | --- |
+| English | [client/en.md](docs/descriptions/client/en.md) | [server/en.md](docs/descriptions/server/en.md) |
+| Русский | [client/ru.md](docs/descriptions/client/ru.md) | [server/ru.md](docs/descriptions/server/ru.md) |
+| Беларуская | [client/be.md](docs/descriptions/client/be.md) | [server/be.md](docs/descriptions/server/be.md) |
+| Українська | [client/uk.md](docs/descriptions/client/uk.md) | [server/uk.md](docs/descriptions/server/uk.md) |
 
-## Требования
+## Requirements
 
-- Minecraft **26.2** (Java Edition, клиент).
-- Fabric Loader **0.20.1+** и **Fabric API**.
-- Java **25**.
+- Minecraft 26.2
+- Java 25
+- Client: Fabric Loader 0.20.1+, Fabric API; Mod Menu optional
+- Server: Fabric Loader 0.20.1+ with Fabric API, or Paper 26.2
 
-## Установка
+## Install
 
-1. Установите Fabric Loader для Minecraft 26.2.
-2. Положите [Fabric API](https://modrinth.com/mod/fabric-api) и `jinfo-<версия>.jar`
-   в папку `mods`.
-3. Запустите игру. Мод клиентский — на сервер его ставить не нужно.
+1. Download the jar for your component from [Releases](https://github.com/mcchopik/jinfo/releases).
+2. Client: put the jar and Fabric API into `.minecraft/mods`.
+3. Fabric server: put the server jar and Fabric API into `mods/`.
+4. Paper server: put the plugin jar into `plugins/`.
+5. Start the game or server.
 
-Готовый jar собирается в GitHub Actions на каждый push (вкладка **Actions** → артефакт
-`jinfo`), а по тегу `v*` автоматически создаётся релиз с jar и `update.json`
-(версия, имя файла, sha256) — его и читает встроенная проверка обновлений.
+## Quick commands
 
-## Быстрый старт
+Client: `/jinfo edit`, `/jinfo web`, `/jinfo settings`.
 
-1. Задайте текст: `/jinfo edit` или `/jinfo web`.
-2. Пример оформления:
-   ```
-   &lПривет!&r Я стримлю и пишу код.
-   {youtube} @mynick
-   {github} https://github.com/mynick
-   {link:Мой сайт} https://example.com
-   ```
-3. Сохраните. Другие игроки увидят профиль по Shift+ПКМ.
+Server: `/jinfo me`, `/jinfo view <name>`, `/jinfo set <text>`, `/jinfo photo <url|off>`, `/jinfo clear`.
 
-### Плейсхолдеры сервисов
+## Links
 
-`{youtube}`, `{twitch}`, `{discord}`, `{telegram}`, `{tiktok}`, `{instagram}`, `{x}`,
-`{github}`, `{steam}`, `{vk}`, `{reddit}`, `{kick}`, `{boosty}`, `{donationalerts}`,
-`{modrinth}` — после плейсхолдера укажите `@ник` или полную ссылку.
-Универсальная ссылка: `{link:Название} https://example.com`.
-
-### Цвета и стили
-
-`&0`–`&9`, `&a`–`&f` — цвета; `&l` жирный, `&o` курсив, `&n` подчёркнутый,
-`&m` зачёркнутый, `&r` сброс; hex-цвет `&#RRGGBB`; `&k` запрещён.
-
-Лимиты: **500** символов, **10** строк, до **6** ссылок.
-
-## Сборка из исходников
-
-```bash
-./gradlew build
-```
-
-Jar появится в `build/libs/`. CI использует Java 25 (Microsoft build) и Gradle wrapper 9.8.2.
-
-## Приватность
-
-- Текст профиля хранится в D1 в зашифрованном виде
-- Worker не логирует UUID, тексты и IP.
-- Приватный ключ offline-аккаунта остаётся на клиенте; на сервер уходит только
-  публичный ключ и подпись.
-
-## Сообщество
-
-Обсуждения, вопросы и идеи: https://github.com/mcchopik/jinfo/discussions
-
-## Лицензия
-
-MIT.
-.
+- [All descriptions](docs/descriptions/README.md)
+- [Releases](https://github.com/mcchopik/jinfo/releases)
+- [Issues](https://github.com/mcchopik/jinfo/issues)
+- [Security notes](NOTES.md)
