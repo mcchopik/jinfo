@@ -13,8 +13,6 @@ public class ServerConfig {
     private static final String CONFIG_FILE = "jinfo-server.json";
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
-    private static int port = 8765;
-    private static String host = "0.0.0.0";
     private static String profilesDir = "jinfo-profiles";
     private static String centralApiBase = "https://mcprofiles.mcchopik.workers.dev";
 
@@ -25,8 +23,6 @@ public class ServerConfig {
                 String json = Files.readString(path);
                 ConfigData data = GSON.fromJson(json, ConfigData.class);
                 if (data != null) {
-                    port = data.port != 0 ? data.port : port;
-                    host = data.host != null ? data.host : host;
                     profilesDir = data.profilesDir != null ? data.profilesDir : profilesDir;
                     centralApiBase = data.centralApiBase != null ? data.centralApiBase : centralApiBase;
                 }
@@ -40,8 +36,6 @@ public class ServerConfig {
     public static void save() {
         try {
             ConfigData data = new ConfigData();
-            data.port = port;
-            data.host = host;
             data.profilesDir = profilesDir;
             data.centralApiBase = centralApiBase;
             Files.writeString(Paths.get(CONFIG_FILE), GSON.toJson(data));
@@ -50,14 +44,15 @@ public class ServerConfig {
         }
     }
 
-    public static int getPort() { return port; }
-    public static String getHost() { return host; }
-    public static String getProfilesDir() { return profilesDir; }
-    public static String getCentralApiBase() { return centralApiBase; }
+    public static String getProfilesDir() {
+        return profilesDir;
+    }
+
+    public static String getCentralApiBase() {
+        return centralApiBase;
+    }
 
     private static class ConfigData {
-        int port;
-        String host;
         String profilesDir;
         String centralApiBase;
     }

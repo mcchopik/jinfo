@@ -3,7 +3,7 @@
   "id": "jinfo-server",
   "version": "${version}",
   "name": "JInfo Server",
-  "description": "Server-side component for JInfo player profiles. Provides HTTP API and web UI for viewing profiles without client mod.",
+  "description": "Server-side JInfo profiles via chat commands. No client mod and no web page required.",
   "authors": ["mcchopik"],
   "contact": {
     "homepage": "https://github.com/mcchopik/jinfo",

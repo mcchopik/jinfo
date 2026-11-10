@@ -1,0 +1,285 @@
+package com.mcchopik.jinfo.server.text;
+
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.ClickEvent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.HoverEvent;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
+import net.minecraft.network.chat.TextColor;
+
+public final class ProfileText {
+
+    private static final int MAX_CHARS = 500;
+    private static final int MAX_LINES = 10;
+    private static final int MAX_LINKS = 6;
+    private static final Map<String, String> SERVICES = Map.ofEntries(
+            Map.entry("youtube", "https://youtube.com/@%s"),
+            Map.entry("twitch", "https://twitch.tv/%s"),
+            Map.entry("discord", "https://discord.gg/%s"),
+            Map.entry("telegram", "https://t.me/%s"),
+            Map.entry("tiktok", "https://tiktok.com/@%s"),
+            Map.entry("instagram", "https://instagram.com/%s"),
+            Map.entry("x", "https://x.com/%s"),
+            Map.entry("github", "https://github.com/%s"),
+            Map.entry("steam", "https://steamcommunity.com/id/%s"),
+            Map.entry("vk", "https://vk.com/%s"),
+            Map.entry("reddit", "https://reddit.com/user/%s"),
+            Map.entry("kick", "https://kick.com/%s"),
+            Map.entry("boosty", "https://boosty.to/%s"),
+            Map.entry("donationalerts", "https://www.donationalerts.com/r/%s"),
+            Map.entry("modrinth", "https://modrinth.com/user/%s"));
+
+    private ProfileText() {
+    }
+
+    public static List<Component> lines(String raw) {
+        List<Component> out = new ArrayList<>();
+        String safe = sanitize(raw);
+        for (String line : safe.split("\n", -1)) {
+            out.add(renderLine(line));
+        }
+        return out;
+    }
+
+    public static String validate(String raw) {
+        String safe = sanitize(raw);
+        if (safe.length() > MAX_CHARS) {
+            return "Profile is too long (max " + MAX_CHARS + " characters).";
+        }
+        if (safe.split("\n", -1).length > MAX_LINES) {
+            return "Profile has too many lines (max " + MAX_LINES + ").";
+        }
+        int links = 0;
+        int i = 0;
+        while (i < safe.length()) {
+            int open = safe.indexOf('{', i);
+            if (open < 0) {
+                break;
+            }
+            int close = safe.indexOf('}', open + 1);
+            if (close < 0) {
+                break;
+            }
+            String key = safe.substring(open + 1, close).trim().toLowerCase(Locale.ROOT);
+            if (key.startsWith("link:") || SERVICES.containsKey(key)
+                    || key.equals("photo") || key.equals("avatar")) {
+                links++;
+            }
+            i = close + 1;
+        }
+        if (links > MAX_LINKS) {
+            return "Profile has too many links (max " + MAX_LINKS + ").";
+        }
+        return null;
+    }
+
+    private static Component renderLine(String line) {
+        MutableComponent out = Component.empty();
+        StringBuilder buffer = new StringBuilder();
+        Style style = Style.EMPTY;
+        int i = 0;
+        while (i < line.length()) {
+            char c = line.charAt(i);
+            if ((c == '&' || c == '\u00A7') && i + 1 < line.length()) {
+                Format format = format(line, i, style);
+                if (format != null) {
+                    flush(out, buffer, style);
+                    style = format.style();
+                    i += format.consumed();
+                    continue;
+                }
+            }
+            if (c == '{') {
+                Placeholder placeholder = placeholder(line, i, style);
+                if (placeholder != null) {
+                    flush(out, buffer, style);
+                    out.append(placeholder.component());
+                    i = placeholder.nextIndex();
+                    continue;
+                }
+            }
+            buffer.append(c);
+            i++;
+        }
+        flush(out, buffer, style);
+        return out;
+    }
+
+    private static void flush(MutableComponent out, StringBuilder buffer, Style style) {
+        if (buffer.length() == 0) {
+            return;
+        }
+        out.append(Component.literal(buffer.toString()).withStyle(style));
+        buffer.setLength(0);
+    }
+
+    private record Format(int consumed, Style style) {
+    }
+
+    private static Format format(String text, int i, Style current) {
+        char n = Character.toLowerCase(text.charAt(i + 1));
+        if (n == '#' && i + 7 < text.length()) {
+            String hex = text.substring(i + 2, i + 8);
+            if (isHex(hex)) {
+                return new Format(8, current.withColor(TextColor.fromRgb(Integer.parseInt(hex, 16))));
+            }
+        }
+        if (n >= '0' && n <= '9' || n >= 'a' && n <= 'f') {
+            ChatFormatting color = ChatFormatting.getByCode(n);
+            return new Format(2, color == null ? current : current.withColor(color));
+        }
+        return switch (n) {
+            case 'l' -> new Format(2, current.withBold(true));
+            case 'o' -> new Format(2, current.withItalic(true));
+            case 'n' -> new Format(2, current.withUnderlined(true));
+            case 'm' -> new Format(2, current.withStrikethrough(true));
+            case 'r' -> new Format(2, Style.EMPTY);
+            case 'k' -> new Format(2, current);
+            default -> null;
+        };
+    }
+
+    private record Placeholder(Component component, int nextIndex) {
+    }
+
+    private static Placeholder placeholder(String text, int i, Style style) {
+        int close = text.indexOf('}', i + 1);
+        if (close < 0 || close - i > 120) {
+            return null;
+        }
+        String content = text.substring(i + 1, close).trim();
+        if (content.isEmpty()) {
+            return null;
+        }
+        String lower = content.toLowerCase(Locale.ROOT);
+        boolean universal = lower.startsWith("link:");
+        boolean photo = lower.equals("photo") || lower.equals("avatar");
+        String service = SERVICES.containsKey(lower) ? lower : null;
+        if (!universal && !photo && service == null) {
+            return null;
+        }
+        int p = close + 1;
+        while (p < text.length() && (text.charAt(p) == ' ' || text.charAt(p) == '\t')) {
+            p++;
+        }
+        int start = p;
+        while (p < text.length() && !Character.isWhitespace(text.charAt(p))) {
+            p++;
+        }
+        String arg = text.substring(start, p);
+        if (arg.isEmpty()) {
+            return null;
+        }
+        String url;
+        String label;
+        if (universal) {
+            label = content.substring(5).trim();
+            if (label.isEmpty()) {
+                label = "Link";
+            }
+            url = arg;
+        } else if (photo) {
+            label = "Photo";
+            url = arg;
+        } else {
+            label = service;
+            if (arg.startsWith("http://") || arg.startsWith("https://")) {
+                url = arg;
+            } else {
+                String handle = arg.startsWith("@") ? arg.substring(1) : arg;
+                if (!isHandle(handle)) {
+                    return null;
+                }
+                url = String.format(SERVICES.get(service), handle);
+            }
+        }
+        if (!url.toLowerCase(Locale.ROOT).startsWith("https://")) {
+            return null;
+        }
+        Component link = Component.literal("[" + label + "]")
+                .withStyle(style.withColor(TextColor.fromRgb(0x4FC3F7))
+                        .withUnderlined(true)
+                        .withClickEvent(new ClickEvent.OpenUrl(URI.create(url)))
+                        .withHoverEvent(new HoverEvent.ShowText(Component.literal(url))));
+        return new Placeholder(link, p);
+    }
+
+    private static boolean isHex(String value) {
+        if (value.length() != 6) {
+            return false;
+        }
+        for (int i = 0; i < value.length(); i++) {
+            char c = Character.toLowerCase(value.charAt(i));
+            if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f'))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean isHandle(String handle) {
+        if (handle.isEmpty() || handle.length() > 64) {
+            return false;
+        }
+        for (int i = 0; i < handle.length(); i++) {
+            char c = handle.charAt(i);
+            if (!((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')
+                    || (c >= '0' && c <= '9') || c == '.' || c == '_' || c == '-')) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public static String sanitize(String raw) {
+        if (raw == null) {
+            return "";
+        }
+        String s = raw.replace("\r\n", "\n").replace('\r', '\n');
+        StringBuilder out = new StringBuilder(s.length());
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (c == '\n') {
+                out.append(c);
+            } else if (c == '\t') {
+                out.append(' ');
+            } else if (c < 0x20 || c == 0x7F) {
+                continue;
+            } else if (c >= '\u200B' && c <= '\u200D') {
+                continue;
+            } else if (c == '\uFEFF' || c == '\u2060') {
+                continue;
+            } else if (c >= '\u202A' && c <= '\u202E') {
+                continue;
+            } else if (c >= '\u2066' && c <= '\u2069') {
+                continue;
+            } else if (c == '\u200E' || c == '\u200F') {
+                continue;
+            } else {
+                out.append(c);
+            }
+        }
+        StringBuilder collapsed = new StringBuilder(out.length());
+        char last = 0;
+        int run = 0;
+        for (int i = 0; i < out.length(); i++) {
+            char c = out.charAt(i);
+            if (c == last) {
+                run++;
+            } else {
+                last = c;
+                run = 1;
+            }
+            if (run <= 4) {
+                collapsed.append(c);
+            }
+        }
+        return collapsed.toString();
+    }
+}

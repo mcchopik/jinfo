@@ -1,35 +1,50 @@
 # JInfo Server (Fabric)
 
-Серверный мод для Fabric 26.2. Позволяет игрокам **без клиентского мода** смотреть профили JInfo через браузер.
+Fabric server mod for Minecraft 26.2. It provides JInfo profiles through chat commands. It does **not** open a web page and does **not** require the client mod.
 
-## Возможности
+## Features
 
-- HTTP-сервер со списком профилей и страницей каждого игрока
-- Просмотр скина и текста профиля в браузере
-- Команды `/jinfo` для администраторов
-- Конфиг `config/jinfo-server.json`, профили в `jinfo-profiles/`
+- `/jinfo me`, `view`, `set`, `photo`, `clear` for players
+- `/jinfo list`, `import`, `remove`, `reload` for admins
+- Local JSON profiles and JInfo cloud fallback
+- Clickable HTTPS links and formatted profile text
 
-## Установка
+## Install
 
-1. Положите `jinfo-server-0.2.0.jar` в папку `mods` на сервере.
-2. Запустите сервер — создастся `config/jinfo-server.json`.
-3. Поменяйте `port` / `host` при необходимости.
-4. Перезапустите или выполните `/jinfo reload`.
+1. Put Fabric API and `jinfo-server-0.3.0.jar` into `mods/`.
+2. Start the server. `jinfo-server.json` is created automatically.
+3. Edit `centralApiBase` or `profilesDir` if needed.
+4. Restart the server.
 
-## Команды
+## Permissions
 
-- `/jinfo reload` — перечитать конфиг и перезапустить веб-сервер
-- `/jinfo list` — список профилей
-- `/jinfo profile <ник>` — ссылка на профиль
+- `jinfo.use` — default true
+- `jinfo.admin` — default operator
 
-Право: уровень оператора (2).
+## Commands
 
-## Ссылки
+| Command | Description |
+| --- | --- |
+| `/jinfo help` | Show help |
+| `/jinfo me` | Show your profile |
+| `/jinfo view <name\|uuid>` | View a profile |
+| `/jinfo set <text>` | Save your profile |
+| `/jinfo photo <url\|off>` | Set or remove a photo |
+| `/jinfo clear` | Remove your profile |
+| `/jinfo list` | List local profiles (admin) |
+| `/jinfo import <uuid> [name]` | Import from cloud (admin) |
+| `/jinfo remove <name\|uuid>` | Remove a local profile (admin) |
+| `/jinfo reload` | Reload config (admin) |
 
-- Клиентский мод: https://github.com/mcchopik/jinfo (ветка `master`)
-- Paper-плагин: https://github.com/mcchopik/jinfo (ветка `paper`)
-- Этот мод: https://github.com/mcchopik/jinfo (ветка `server`)
+## Links
 
-## Сборка
+- [English description](https://github.com/mcchopik/jinfo/blob/master/docs/descriptions/server/en.md)
+- [Русское описание](https://github.com/mcchopik/jinfo/blob/master/docs/descriptions/server/ru.md)
+- [Беларускае апісанне](https://github.com/mcchopik/jinfo/blob/master/docs/descriptions/server/be.md)
+- [Український опис](https://github.com/mcchopik/jinfo/blob/master/docs/descriptions/server/uk.md)
+- [Client mod](https://github.com/mcchopik/jinfo)
+- [Paper plugin](https://github.com/mcchopik/jinfo/tree/paper)
 
-GitHub Actions: workflow `build-server` собирает jar на каждый push в ветку `server` и публикует релиз на тег `server-v*`.
+## Build
+
+GitHub Actions workflow `build-server` builds the jar on every push to `server` and publishes a release for `server-v*` tags.

@@ -45,7 +45,7 @@ public class ProfileStorage {
                 String uuid = obj.get("uuid").getAsString();
                 profilesByUuid.put(uuid, obj);
                 if (obj.has("name")) {
-                    nameToUuid.put(obj.get("name").getAsString().toLowerCase(), uuid);
+                    nameToUuid.put(obj.get("name").getAsString().toLowerCase(java.util.Locale.ROOT), uuid);
                 }
             }
         } catch (IOException e) {
@@ -58,7 +58,7 @@ public class ProfileStorage {
     }
 
     public String getUuidByName(String name) {
-        return nameToUuid.get(name.toLowerCase());
+        return nameToUuid.get(name.toLowerCase(java.util.Locale.ROOT));
     }
 
     public Collection<JsonObject> getAllProfiles() {
@@ -69,7 +69,7 @@ public class ProfileStorage {
         String uuid = profile.get("uuid").getAsString();
         profilesByUuid.put(uuid, profile);
         if (profile.has("name")) {
-            nameToUuid.put(profile.get("name").getAsString().toLowerCase(), uuid);
+            nameToUuid.put(profile.get("name").getAsString().toLowerCase(java.util.Locale.ROOT), uuid);
         }
         Path file = profilesDir.resolve(uuid + ".json");
         try {
@@ -82,7 +82,7 @@ public class ProfileStorage {
     public void deleteProfile(String uuid) {
         JsonObject removed = profilesByUuid.remove(uuid);
         if (removed != null && removed.has("name")) {
-            nameToUuid.remove(removed.get("name").getAsString().toLowerCase());
+            nameToUuid.remove(removed.get("name").getAsString().toLowerCase(java.util.Locale.ROOT));
         }
         try {
             Files.deleteIfExists(profilesDir.resolve(uuid + ".json"));
