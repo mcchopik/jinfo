@@ -3,10 +3,10 @@ package com.mcchopik.jinfo.server;
 import com.mcchopik.jinfo.server.config.ServerConfig;
 import com.mcchopik.jinfo.server.http.HttpServerManager;
 import com.mcchopik.jinfo.server.profile.ProfileStorage;
+import com.mojang.brigadier.arguments.StringArgumentType;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.server.command.CommandManager;
 import net.minecraft.text.Text;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,46 +27,49 @@ public class JInfoServerMod implements ModInitializer {
         profileStorage = new ProfileStorage(ServerConfig.getProfilesDir());
         httpServer = new HttpServerManager(ServerConfig.getPort(), profileStorage);
 
-        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
-            registerCommands(dispatcher);
-        });
+        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) ->
+                dispatcher.register(
+                        CommandManager.literal("jinfo")
+                                .requires(source -> source.hasPermissionLevel(2))
+                                .then(CommandManager.literal("reload")
+                                        .executes(ctx -> {
+                                            ServerConfig.load();
+                                            httpServer.reload(ServerConfig.getPort());
+                                            ctx.getSource().sendFeedback(() ->
+                                                    Text.literal("§aJInfo Server config reloaded"), true);
+                                            return 1;
+                                        }))
+                                .then(CommandManager.literal("profile")
+                                        .then(CommandManager.argument("name", StringArgumentType.word())
+                                                .executes(ctx -> {
+                                                    String name = StringArgumentType.getString(ctx, "name");
+                                                    String uuid = profileStorage.getUuidByName(name);
+                                                    if (uuid == null) {
+                                                        ctx.getSource().sendError(
+                                                                Text.literal("§cProfile not found for " + name));
+                                                        return 0;
+                                                    }
+                                                    String url = "http://" + ServerConfig.getHost() + ":"
+                                                            + ServerConfig.getPort() + "/p/" + uuid;
+                                                    ctx.getSource().sendFeedback(() ->
+                                                            Text.literal("§aProfile for " + name + ": §b" + url), true);
+                                                    return 1;
+                                                })))
+                                .then(CommandManager.literal("list")
+                                        .executes(ctx -> {
+                                            if (profileStorage.getAllProfiles().isEmpty()) {
+                                                ctx.getSource().sendFeedback(() ->
+                                                        Text.literal("§7No profiles yet."), false);
+                                                return 1;
+                                            }
+                                            profileStorage.getAllProfiles().forEach(p -> ctx.getSource().sendFeedback(() ->
+                                                    Text.literal("§7- §f" + (p.has("name") ? p.get("name").getAsString() : "?")
+                                                            + " §8(" + p.get("uuid").getAsString() + ")"), false));
+                                            return 1;
+                                        }))
+                ));
 
         LOGGER.info("JInfo Server mod initialized on port {}", ServerConfig.getPort());
-    }
-
-    private void registerCommands(net.minecraft.command.CommandDispatcher<ServerCommandSource> dispatcher) {
-        net.minecraft.command.argument.serialize.ArgumentSerializer.register();
-
-        dispatcher.register(
-            net.minecraft.server.command.CommandManager.literal("jinfo")
-                .requires(source -> source.hasPermissionLevel(2))
-                .then(net.minecraft.server.command.CommandManager.literal("reload")
-                    .executes(ctx -> {
-                        ServerConfig.load();
-                        httpServer.reload(ServerConfig.getPort());
-                        ctx.getSource().sendFeedback(() -> Text.literal("§aJInfo Server config reloaded"), true);
-                        return 1;
-                    }))
-                .then(net.minecraft.server.command.CommandManager.literal("profile")
-                    .then(net.minecraft.server.command.CommandManager.argument("name", net.minecraft.command.argument.StringArgumentType.string())
-                        .executes(ctx -> {
-                            String name = net.minecraft.command.argument.StringArgumentType.getString(ctx, "name");
-                            String uuid = profileStorage.getUuidByName(name);
-                            if (uuid == null) {
-                                ctx.getSource().sendError(Text.literal("§cProfile not found for " + name));
-                                return 0;
-                            }
-                            ctx.getSource().sendFeedback(() -> Text.literal("§aProfile for " + name + ": §e" + uuid + " §7- §bhttp://" + ServerConfig.getHost() + ":" + ServerConfig.getPort() + "/p/" + uuid), true);
-                            return 1;
-                        }))
-                )
-                .then(net.minecraft.server.command.CommandManager.literal("sync")
-                    .executes(ctx -> {
-                        ctx.getSource().sendFeedback(() -> Text.literal("§aSyncing with central JInfo API..."), true);
-                        // TODO: implement sync
-                        return 1;
-                    }))
-        );
     }
 
     public static ProfileStorage getProfileStorage() {

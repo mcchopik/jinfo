@@ -2,8 +2,8 @@ pluginManagement {
     repositories {
         mavenCentral()
         gradlePluginPortal()
-        maven { url 'https://maven.fabricmc.net/' }
+        maven { url 'https://repo.papermc.io/repository/maven-public/' }
     }
 }
 
-rootProject.name = 'jinfo-server'
+rootProject.name = 'jinfo-paper'

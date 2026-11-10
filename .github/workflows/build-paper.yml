@@ -1,11 +1,11 @@
-name: build-server
+name: build-paper
 
 on:
   push:
-    branches: [server]
-    tags: ['server-v*']
+    branches: [paper]
+    tags: ['paper-v*']
   pull_request:
-    branches: [server]
+    branches: [paper]
   workflow_dispatch:
 
 permissions:
@@ -32,7 +32,7 @@ jobs:
       - name: build
         run: |
           if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
-            ./gradlew build -Pmod_version="${GITHUB_REF_NAME#server-v}"
+            ./gradlew build -Pmod_version="${GITHUB_REF_NAME#paper-v}"
           else
             ./gradlew build
           fi
@@ -40,12 +40,12 @@ jobs:
       - name: capture build artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: jinfo-server
-          path: build/libs/jinfo-server-*.jar
+          name: jinfo-paper
+          path: build/libs/jinfo-paper-*.jar
           if-no-files-found: error
 
   release:
-    if: github.ref_type == 'tag' && startsWith(github.ref_name, 'server-v')
+    if: github.ref_type == 'tag' && startsWith(github.ref_name, 'paper-v')
     needs: build
     runs-on: ubuntu-24.04
     permissions:
@@ -56,7 +56,7 @@ jobs:
       - name: download artifact
         uses: actions/download-artifact@v7
         with:
-          name: jinfo-server
+          name: jinfo-paper
           path: release-artifact
 
       - name: publish release
@@ -64,8 +64,8 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          version="${GITHUB_REF_NAME#server-v}"
-          jar="release-artifact/jinfo-server-${version}.jar"
+          version="${GITHUB_REF_NAME#paper-v}"
+          jar="release-artifact/jinfo-paper-${version}.jar"
 
           if [ ! -f "${jar}" ]; then
             echo "::error::Expected ${jar}, but the artifact contains:"
@@ -73,10 +73,6 @@ jobs:
             exit 1
           fi
 
-          sha="$(sha256sum "${jar}" | cut -d' ' -f1)"
-          printf '{\n  "version": "%s",\n  "file": "jinfo-server-%s.jar",\n  "sha256": "%s"\n}\n' \
-            "${version}" "${version}" "${sha}" > update.json
-
-          gh release create "${GITHUB_REF_NAME}" "${jar}" update.json \
-            --title "jinfo-server ${version}" \
+          gh release create "${GITHUB_REF_NAME}" "${jar}" \
+            --title "jinfo-paper ${version}" \
             --generate-notes
