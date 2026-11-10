@@ -1,10 +1,11 @@
-name: build
+name: build-server
 
 on:
   push:
-    branches: [master]
-    tags: ['v*']
+    branches: [server]
+    tags: ['server-v*']
   pull_request:
+    branches: [server]
   workflow_dispatch:
 
 permissions:
@@ -21,33 +22,30 @@ jobs:
       - name: setup jdk
         uses: actions/setup-java@v5
         with:
-          java-version: '25'
+          java-version: '21'
           distribution: 'microsoft'
       - name: setup gradle
         uses: gradle/actions/setup-gradle@v6
       - name: make gradle wrapper executable
         run: chmod +x ./gradlew
 
-      # Тег v0.1beta собирает ровно эту версию; обычный push берёт mod_version
-      # из gradle.properties.
       - name: build
         run: |
           if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
-            ./gradlew build -Pmod_version="${GITHUB_REF_NAME#v}"
+            ./gradlew build -Pmod_version="${GITHUB_REF_NAME#server-v}"
           else
             ./gradlew build
           fi
 
-      # Игрокам нужен только мод-jar, sources-jar не публикуем.
       - name: capture build artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: jinfo
-          path: build/libs/jinfo-*.jar
+          name: jinfo-server
+          path: build/libs/jinfo-server-*.jar
           if-no-files-found: error
 
   release:
-    if: github.ref_type == 'tag'
+    if: github.ref_type == 'tag' && startsWith(github.ref_name, 'server-v')
     needs: build
     runs-on: ubuntu-24.04
     permissions:
@@ -58,7 +56,7 @@ jobs:
       - name: download artifact
         uses: actions/download-artifact@v7
         with:
-          name: jinfo
+          name: jinfo-server
           path: release-artifact
 
       - name: publish release
@@ -66,8 +64,8 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          version="${GITHUB_REF_NAME#v}"
-          jar="release-artifact/jinfo-${version}.jar"
+          version="${GITHUB_REF_NAME#server-v}"
+          jar="release-artifact/jinfo-server-${version}.jar"
 
           if [ ! -f "${jar}" ]; then
             echo "::error::Expected ${jar}, but the artifact contains:"
@@ -76,16 +74,9 @@ jobs:
           fi
 
           sha="$(sha256sum "${jar}" | cut -d' ' -f1)"
-          printf '{\n  "version": "%s",\n  "file": "jinfo-%s.jar",\n  "sha256": "%s"\n}\n' \
+          printf '{\n  "version": "%s",\n  "file": "jinfo-server-%s.jar",\n  "sha256": "%s"\n}\n' \
             "${version}" "${version}" "${sha}" > update.json
 
-          notes=".github/release-notes/${version}.md"
-          if [ -f "${notes}" ]; then
-            gh release create "${GITHUB_REF_NAME}" "${jar}" update.json \
-              --title "jinfo ${version}" \
-              --notes-file "${notes}"
-          else
-            gh release create "${GITHUB_REF_NAME}" "${jar}" update.json \
-              --title "jinfo ${version}" \
-              --generate-notes
-          fi
+          gh release create "${GITHUB_REF_NAME}" "${jar}" update.json \
+            --title "jinfo-server ${version}" \
+            --generate-notes
