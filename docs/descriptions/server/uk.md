@@ -37,13 +37,13 @@ Paper: Paper 26.2.
 ### Fabric
 
 1. Встановіть Fabric Loader на сервер.
-2. Покладіть Fabric API і `jinfo-server-<version>.jar` у `mods/`.
+2. Покладіть Fabric API і `JInfo-Server-Fabric-<version>.jar` у `mods/`.
 3. Запустіть сервер.
 4. За потреби відредагуйте `jinfo-server.json`.
 
 ### Paper
 
-1. Покладіть `jinfo-paper-<version>.jar` у `plugins/`.
+1. Покладіть `JInfo-Server-Paper-<version>.jar` у `plugins/`.
 2. Запустіть сервер.
 3. За потреби відредагуйте `plugins/JInfoPaper/config.yml`.
 

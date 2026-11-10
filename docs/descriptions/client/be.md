@@ -26,7 +26,7 @@ JInfo Client — кліенцкі Fabric-мод для Minecraft **26.2**, як�
 ## Усталёўка
 
 1. Усталюйце Fabric Loader для Minecraft 26.2.
-2. Пакладзіце `jinfo-<version>.jar` і Fabric API у `.minecraft/mods`.
+2. Пакладзіце `JInfo-Client-<version>.jar` і Fabric API у `.minecraft/mods`.
 3. Пры жаданні ўсталюйце Mod Menu.
 4. Запусціце гульню і націсніце `P` або ўвядзіце `/jinfo`.
 
