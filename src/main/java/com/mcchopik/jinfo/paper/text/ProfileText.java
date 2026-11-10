@@ -1,6 +1,5 @@
 package com.mcchopik.jinfo.paper.text;
 
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -266,7 +265,7 @@ public final class ProfileText {
         Component link = Component.text("[" + label + "]")
                 .color(TextColor.color(LINK_COLOR))
                 .decorate(TextDecoration.UNDERLINED)
-                .clickEvent(ClickEvent.openUrl(URI.create(url)))
+                .clickEvent(ClickEvent.openUrl(url))
                 .hoverEvent(HoverEvent.showText(Component.text(url)));
         return new Placeholder(link, p);
     }
