@@ -1,5 +1,6 @@
 package com.mcchopik.jinfo.server.http;
 
+import com.mcchopik.jinfo.server.JInfoServerMod;
 import com.mcchopik.jinfo.server.config.ServerConfig;
 import com.mcchopik.jinfo.server.profile.ProfileStorage;
 import com.google.gson.Gson;
