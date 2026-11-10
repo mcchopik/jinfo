@@ -54,10 +54,10 @@
 
 Профили можно смотреть **без клиентского мода** через браузер:
 
-- **Fabric-сервер** — ветка `server`, релиз `jinfo-server 0.1.1`:
-  https://github.com/mcchopik/jinfo/releases/tag/server-v0.1.1
-- **Paper-плагин** — ветка `paper`, релиз `jinfo-paper 0.1.0`:
-  https://github.com/mcchopik/jinfo/releases/tag/paper-v0.1.0
+- **Fabric-сервер (26.2)** — ветка `server`, релиз `jinfo-server 0.2.0`:
+  https://github.com/mcchopik/jinfo/releases/tag/server-v0.2.0
+- **Paper-плагин (26.2)** — ветка `paper`, релиз `jinfo-paper 0.2.0`:
+  https://github.com/mcchopik/jinfo/releases/tag/paper-v0.2.0
 
 Оба поднимают веб-сервер (по умолчанию порт `8765`) со списком профилей,
 страницей игрока и JSON API; есть команды `/jinfo`. Инструкции — в README
