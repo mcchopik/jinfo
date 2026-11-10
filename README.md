@@ -54,8 +54,8 @@
 
 Профили можно смотреть **без клиентского мода** через браузер:
 
-- **Fabric-сервер** — ветка `server`, релиз `jinfo-server 0.1.0`:
-  https://github.com/mcchopik/jinfo/releases/tag/server-v0.1.0
+- **Fabric-сервер** — ветка `server`, релиз `jinfo-server 0.1.1`:
+  https://github.com/mcchopik/jinfo/releases/tag/server-v0.1.1
 - **Paper-плагин** — ветка `paper`, релиз `jinfo-paper 0.1.0`:
   https://github.com/mcchopik/jinfo/releases/tag/paper-v0.1.0
 
