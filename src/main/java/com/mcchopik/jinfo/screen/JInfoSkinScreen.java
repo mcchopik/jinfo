@@ -270,13 +270,15 @@ public class JInfoSkinScreen extends Screen {
     }
 
     private void updatePreview() {
-        PlayerSkin skin = null;
+        final PlayerSkin skin;
         if (JInfoConfig.skinMode() != JInfoConfig.SkinMode.AUTO) {
             String key = SkinTextures.cacheKey(
                     JInfoConfig.skinMode() == JInfoConfig.SkinMode.URL ? JInfoConfig.skinUrl() : null,
                     JInfoConfig.skinMode() == JInfoConfig.SkinMode.FILE ? JInfoConfig.skinFile() : null,
                     JInfoConfig.skinSlim());
             skin = SkinTextures.get(key);
+        } else {
+            skin = null;
         }
         if (previewViewer != null) {
             removeWidget(previewViewer);
