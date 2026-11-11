@@ -25,7 +25,7 @@ public final class CentralApi {
             String url = base.endsWith("/") ? base.substring(0, base.length() - 1) : base;
             HttpRequest request = HttpRequest.newBuilder(URI.create(url + "/public/profile/" + uuid))
                     .timeout(TIMEOUT)
-                    .header("User-Agent", "jinfo-paper/0.3.0")
+                    .header("User-Agent", "jinfo-paper/1.3")
                     .header("Accept", "application/json")
                     .GET()
                     .build();
