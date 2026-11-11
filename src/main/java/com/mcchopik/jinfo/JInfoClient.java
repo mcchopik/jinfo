@@ -87,6 +87,12 @@ public class JInfoClient implements ClientModInitializer {
     }
 
     public static String selfName() {
+        if (api != null && api.isLoggedIn()) {
+            String name = api.currentName();
+            if (name != null && !name.isBlank()) {
+                return name;
+            }
+        }
         return MinecraftSession.currentUsername()
                 .or(() -> Optional.ofNullable(JInfoConfig.nickname())
                         .filter(name -> !name.isBlank()))
@@ -106,6 +112,12 @@ public class JInfoClient implements ClientModInitializer {
     }
 
     public static String selfUuid(String name) {
+        if (api != null && api.isLoggedIn()) {
+            String sessionUuid = api.currentUuid();
+            if (sessionUuid != null) {
+                return sessionUuid;
+            }
+        }
         return MinecraftSession.current()
                 .map(MinecraftSession.SessionInfo::uuid)
                 .filter(JInfoClient::isUuidV4)

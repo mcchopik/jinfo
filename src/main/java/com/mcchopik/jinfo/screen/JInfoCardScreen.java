@@ -102,8 +102,8 @@ public class JInfoCardScreen extends Screen {
                     parsed = p;
                     hasProfile = true;
                     verified = data.verified();
-                    statusText = verified ? Messages.s("verified") : Messages.s("unverified");
-                    statusColor = verified ? UiColors.OK : UiColors.WARN;
+                    statusText = verified ? Messages.s("verified") : "";
+                    statusColor = UiColors.OK;
                     SkinSpec spec = SkinSpec.parse(skinJson);
                     if (spec != null) {
                         SkinTextures.loadAsync(spec.cacheKey(), spec.url(), null, spec.slim(),
@@ -164,10 +164,10 @@ public class JInfoCardScreen extends Screen {
         graphics.text(font, playerName, panelX + (PANEL_W - nameW) / 2, headY + HEAD + 6,
                 UiColors.TEXT, true);
 
-        String icon = hasProfile ? (verified ? "[✓]" : "[?]") : "";
+        String icon = hasProfile && verified ? "[✓]" : "";
         if (!icon.isEmpty()) {
             graphics.text(font, icon, panelX + (PANEL_W + nameW) / 2 + 6, headY + HEAD + 6,
-                    verified ? UiColors.OK : UiColors.WARN, false);
+                    UiColors.OK, false);
         }
 
         int statusW = font.width(statusText);

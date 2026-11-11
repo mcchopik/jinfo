@@ -311,8 +311,8 @@ public class JInfoProfileScreen extends Screen {
                     photo = PhotoTextures.get(p.avatarUrl());
                     loading = false;
                     verified = data.verified();
-                    statusText = verified ? Messages.s("verified") : Messages.s("unverified");
-                    statusColor = verified ? UiColors.OK : UiColors.WARN;
+                    statusText = verified ? Messages.s("verified") : "";
+                    statusColor = UiColors.OK;
                     setWidgets();
                     SkinSpec spec = SkinSpec.parse(skinJson);
                     if (spec != null) {
@@ -407,12 +407,12 @@ public class JInfoProfileScreen extends Screen {
         String name = TextLayout.fit(font, playerName, textW);
         graphics.text(font, name, infoX, panelY + 12, UiColors.TEXT, true);
 
-        String icon = parsed == null ? "" : (verified ? "[✓]" : "[?]");
+        String icon = parsed != null && verified ? "[✓]" : "";
         if (!icon.isEmpty()) {
             int nameW = font.width(name);
             if (nameW + 12 <= textW) {
                 graphics.text(font, icon, infoX + nameW + 4, panelY + 12,
-                        verified ? UiColors.OK : UiColors.WARN, false);
+                        UiColors.OK, false);
             }
         }
 

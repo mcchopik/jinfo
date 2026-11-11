@@ -4,7 +4,7 @@ JInfo adds short player profiles to Minecraft **26.2**: up to 500 characters, 10
 
 ## Components
 
-- **Client mod** — Fabric client mod with profile cards, a 3D profile screen, an in-game editor and a local browser editor.
+- **Client mod** — Fabric client mod with profile cards, a 3D profile screen, an in-game editor, a local browser editor and optional password accounts.
 - **Server component** — Fabric server mod and Paper plugin that provide JInfo profiles through chat commands. The server component does **not** open a web page and does **not** require the client mod.
 
 ## Languages

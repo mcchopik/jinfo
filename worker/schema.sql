@@ -27,3 +27,16 @@ CREATE INDEX IF NOT EXISTS idx_reports_profile_reporter_time
 
 -- Индекс для очистки старых жалоб
 CREATE INDEX IF NOT EXISTS idx_reports_time ON reports (time);
+
+CREATE TABLE IF NOT EXISTS accounts (
+    username TEXT PRIMARY KEY COLLATE NOCASE,
+    display TEXT NOT NULL,
+    uuid TEXT NOT NULL UNIQUE,
+    salt TEXT NOT NULL,
+    hash TEXT NOT NULL,
+    iterations INTEGER NOT NULL,
+    created INTEGER NOT NULL,
+    updated INTEGER NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_accounts_uuid ON accounts (uuid);

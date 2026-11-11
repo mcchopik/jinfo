@@ -11,7 +11,6 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.security.SecureRandom;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -22,8 +21,6 @@ import java.util.TreeMap;
 public final class ApiClient {
 
     public static final String DEFAULT_BASE_URL = "https://mcprofiles.mcchopik.workers.dev";
-    private static final String MOJANG_JOIN_URL =
-            "https://sessionserver.mojang.com/session/minecraft/join";
     private static final Duration TIMEOUT = Duration.ofSeconds(5);
 
     public record ProfileRef(long updated, boolean verified) {
@@ -34,7 +31,6 @@ public final class ApiClient {
     private final TokenStore tokenStore;
     private final OfflineKeyStore keyStore;
     private final ProfileCache cache = new ProfileCache();
-    private final SecureRandom random = new SecureRandom();
 
     public ApiClient(Path configDir) {
         this(DEFAULT_BASE_URL, configDir);
@@ -64,32 +60,10 @@ public final class ApiClient {
     }
 
     public AuthResult login(String username) throws ApiException {
-        Optional<MinecraftSession.SessionInfo> session = MinecraftSession.current();
-        if (session.isPresent()) {
-            try {
-                return loginOnline(session.get(), username);
-            } catch (ApiException e) {
-                if (e.isRateLimited()) {
-                    throw e;
-                }
-
-            }
-        }
-        return loginOffline(username);
+        return loginGuest(username);
     }
 
-    public AuthResult loginOnline(MinecraftSession.SessionInfo session, String username)
-            throws ApiException {
-        String serverId = "jinfo-" + randomHex(16);
-        joinMojang(session.accessToken(), session.uuid(), serverId);
-        JsonObject body = new JsonObject();
-        body.addProperty("username", username);
-        body.addProperty("serverId", serverId);
-        JsonObject resp = requestJson("POST", baseUrl + "/auth", body, null);
-        return saveAuth(resp);
-    }
-
-    public AuthResult loginOffline(String username) throws ApiException {
+    public AuthResult loginGuest(String username) throws ApiException {
         long timestamp = System.currentTimeMillis();
         String message = username + ":" + timestamp;
         String signature = keyStore.signBase64(message);
@@ -102,26 +76,65 @@ public final class ApiClient {
         return saveAuth(resp);
     }
 
+    public AuthResult registerAccount(String username, String password) throws ApiException {
+        JsonObject body = new JsonObject();
+        body.addProperty("username", username);
+        body.addProperty("password", password);
+        JsonObject resp = requestJson("POST", baseUrl + "/account/register", body, null);
+        return saveAuth(resp);
+    }
+
+    public AuthResult loginAccount(String username, String password) throws ApiException {
+        JsonObject body = new JsonObject();
+        body.addProperty("username", username);
+        body.addProperty("password", password);
+        JsonObject resp = requestJson("POST", baseUrl + "/account/login", body, null);
+        return saveAuth(resp);
+    }
+
+    public void logout() {
+        tokenStore.clear();
+    }
+
+    public boolean isAccount() {
+        return tokenStore.isAccount() && tokenStore.validToken() != null;
+    }
+
+    public boolean isGuest() {
+        return !tokenStore.isAccount() && tokenStore.validToken() != null;
+    }
+
+    public String accountName() {
+        return tokenStore.accountName();
+    }
+
+    public String currentName() {
+        return tokenStore.accountName();
+    }
+
+    public void stopGuest() throws ApiException {
+        String uuid = tokenStore.uuid();
+        if (uuid == null) {
+            return;
+        }
+        long timestamp = System.currentTimeMillis();
+        String signature = keyStore.signBase64("guest-stop:" + uuid + ":" + timestamp);
+        JsonObject body = new JsonObject();
+        body.addProperty("uuid", uuid);
+        body.addProperty("publicKey", keyStore.publicKeyBase64());
+        body.addProperty("timestamp", timestamp);
+        body.addProperty("signature", signature);
+        requestJson("POST", baseUrl + "/auth/guest/stop", body, null);
+    }
+
     private AuthResult saveAuth(JsonObject resp) throws ApiException {
         String uuid = stringOrNull(resp, "uuid");
         String token = stringOrNull(resp, "token");
         if (uuid == null || token == null) {
             throw new ApiException("Malformed auth response");
         }
-        tokenStore.save(uuid, token);
+        tokenStore.save(uuid, token, boolOrFalse(resp, "verified"), stringOrNull(resp, "username"));
         return new AuthResult(uuid, token);
-    }
-
-    private void joinMojang(String accessToken, String uuidNoDashes, String serverId)
-            throws ApiException {
-        JsonObject body = new JsonObject();
-        body.addProperty("accessToken", accessToken);
-        body.addProperty("selectedProfile", uuidNoDashes);
-        body.addProperty("serverId", serverId);
-        HttpResult r = send(jsonRequest(MOJANG_JOIN_URL, body, null));
-        if (r.status() != 204) {
-            throw new ApiException(r.status(), "Mojang join failed: " + r.status());
-        }
     }
 
     public void putProfile(String data) throws ApiException {
@@ -299,17 +312,6 @@ public final class ApiClient {
         } catch (Exception e) {
             return false;
         }
-    }
-
-    private String randomHex(int bytes) {
-        byte[] buf = new byte[bytes];
-        random.nextBytes(buf);
-        StringBuilder sb = new StringBuilder(bytes * 2);
-        for (byte x : buf) {
-            sb.append(Character.forDigit((x >> 4) & 0xF, 16));
-            sb.append(Character.forDigit(x & 0xF, 16));
-        }
-        return sb.toString();
     }
 
     public List<String> knownUuids() {

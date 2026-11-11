@@ -44,9 +44,9 @@ public class SkinViewer extends AbstractWidget {
         this.playerName = playerName == null ? "?" : playerName;
         this.skin = skin;
         this.wideModel = new Model.Simple(models.bakeLayer(ModelLayers.PLAYER),
-                RenderTypes::entityTranslucent);
+                RenderTypes::entityCutout);
         this.slimModel = new Model.Simple(models.bakeLayer(ModelLayers.PLAYER_SLIM),
-                RenderTypes::entityTranslucent);
+                RenderTypes::entityCutout);
         this.wideParts = wideModel.root().createPartLookup();
         this.slimParts = slimModel.root().createPartLookup();
     }

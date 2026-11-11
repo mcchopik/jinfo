@@ -33,7 +33,7 @@ public class JInfoSettingsScreen extends Screen {
     @Override
     protected void init() {
         panelW = Math.min(width - 20, 340);
-        panelH = Math.min(height - 20, 340);
+        panelH = Math.min(height - 20, 370);
         panelX = (width - panelW) / 2;
         panelY = (height - panelH) / 2;
         rebuild();
@@ -92,6 +92,19 @@ public class JInfoSettingsScreen extends Screen {
         addRenderableWidget(Button.builder(Component.literal(Messages.s("change_nick")), b -> openNickEditor())
                 .bounds(x + half + 8, actionY + 104, w - half - 8, 20)
                 .build());
+        String accountName = JInfoClient.api().currentName();
+        String accountLabel;
+        if (JInfoClient.api().isAccount() && accountName != null) {
+            accountLabel = Messages.s("account_logged") + accountName;
+        } else if (JInfoClient.api().isGuest()) {
+            accountLabel = Messages.s("account_guest_mode")
+                    + (accountName == null ? "" : ": " + accountName);
+        } else {
+            accountLabel = Messages.s("account_title");
+        }
+        addRenderableWidget(Button.builder(Component.literal(accountLabel), b -> openAccount())
+                .bounds(x, actionY + 130, w, 20)
+                .build());
 
         addRenderableWidget(Button.builder(Component.literal(Messages.s("back")), b -> onClose())
                 .bounds(panelX + (panelW - 90) / 2, panelY + panelH - 28, 90, 20)
@@ -122,6 +135,12 @@ public class JInfoSettingsScreen extends Screen {
     private void openNickEditor() {
         if (minecraft != null) {
             minecraft.gui.setScreen(new JInfoNickScreen(this, JInfoClient.selfName(), nick -> rebuild()));
+        }
+    }
+
+    private void openAccount() {
+        if (minecraft != null) {
+            minecraft.gui.setScreen(new JInfoAccountScreen(this));
         }
     }
 
@@ -163,7 +182,7 @@ public class JInfoSettingsScreen extends Screen {
         graphics.text(font, Messages.s("settings"), panelX + 16, panelY + 10, UiColors.TEXT, true);
         graphics.text(font, Messages.s("language"), panelX + 16, panelY + 52, UiColors.TEXT_LABEL, false);
 
-        int y = panelY + 236;
+        int y = panelY + 262;
         for (String line : TextLayout.wrap(font, Messages.s("key_hint"), panelW - 32)) {
             graphics.text(font, line, panelX + 16, y, UiColors.TEXT_LABEL, false);
             y += 10;

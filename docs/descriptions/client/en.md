@@ -13,6 +13,7 @@ JInfo Client is a Fabric client mod for Minecraft **26.2** that adds short playe
 - **In-game editor** — colours, styles, placeholders, service links and live preview.
 - **Browser editor** — local web editor with `/jinfo web` and `/jinfo web stop`.
 - **Mod Menu** — the JInfo settings screen is available from the Mod Menu list.
+- **Account** — nickname and password in settings. The server stores only a PBKDF2 hash, and Microsoft sign-in is not used. A registered nickname cannot be used as a guest. While guest mode is active, the nickname is reserved and nobody else can register it until the guest disables that mode.
 - **Languages** — Russian, Belarusian, Ukrainian and English.
 
 ## Requirements
@@ -58,7 +59,7 @@ Colours: `&0`–`&f`, `&l`, `&o`, `&n`, `&m`, `&r`, hex `&#RRGGBB`.
 
 ## Privacy and security
 
-Only HTTPS links are allowed. `javascript:`, `file:`, localhost, IP addresses and links with user info are rejected. Suspicious addresses are marked in the confirmation screen.
+Only HTTPS links are allowed. `javascript:`, `file:`, localhost, IP addresses and links with user info are rejected. Suspicious addresses are marked in the confirmation screen. The account password is never stored on the device; after sign-in only a bearer token is kept.
 
 ## Links
 

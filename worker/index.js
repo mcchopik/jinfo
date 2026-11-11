@@ -1,5 +1,5 @@
 export default {
-	async fetch(request, env, ctx) {
+	async fetch(request, env) {
 		const url = new URL(request.url);
 		const path = url.pathname;
 
@@ -8,11 +8,17 @@ export default {
 		}
 
 		try {
-			if (path === '/auth' && request.method === 'POST') {
-				return await handleAuth(request, env);
+			if (path === '/account/register' && request.method === 'POST') {
+				return await handleAccountRegister(request, env);
+			}
+			if (path === '/account/login' && request.method === 'POST') {
+				return await handleAccountLogin(request, env);
 			}
 			if (path === '/auth/offline' && request.method === 'POST') {
 				return await handleAuthOffline(request, env);
+			}
+			if (path === '/auth/guest/stop' && request.method === 'POST') {
+				return await handleGuestStop(request, env);
 			}
 			if (path === '/profile' && request.method === 'PUT') {
 				return await handleProfilePut(request, env);
@@ -27,18 +33,18 @@ export default {
 			if (path === '/profiles/batch' && request.method === 'POST') {
 				return await handleProfilesBatch(request, env);
 			}
-if (path === '/report' && request.method === 'POST') {
-			return await handleReport(request, env);
-		}
-		if (path.startsWith('/public/profile/') && request.method === 'GET') {
-			const uuid = path.slice('/public/profile/'.length);
-			return await handlePublicProfileGet(uuid, request, env);
-		}
-		if (path === '/stats' && request.method === 'GET') {
-			return await handleStats(env);
-		}
+			if (path === '/report' && request.method === 'POST') {
+				return await handleReport(request, env);
+			}
+			if (path.startsWith('/public/profile/') && request.method === 'GET') {
+				const uuid = path.slice('/public/profile/'.length);
+				return await handlePublicProfileGet(uuid, request, env);
+			}
+			if (path === '/stats' && request.method === 'GET') {
+				return await handleStats(env);
+			}
 
-		return json({ error: 'Not found' }, 404);
+			return json({ error: 'Not found' }, 404);
 		} catch (e) {
 			console.error('Worker error:', e);
 			return json({ error: 'Internal server error' }, 500);
@@ -87,6 +93,51 @@ async function findProfile(request, env, uuid) {
 	return null;
 }
 
+async function findGuestKey(request, env, uuid) {
+	for (const node of orderedNodes(request)) {
+		const row = await dbFor(env, node).prepare(
+			'SELECT pubkey FROM offline_keys WHERE uuid = ?'
+		).bind(uuid).first();
+		if (row) {
+			return { node, row };
+		}
+	}
+	return null;
+}
+
+async function handleGuestStop(request, env) {
+	const body = await request.json().catch(() => null);
+	if (!body || typeof body !== 'object') {
+		return json({ error: 'Invalid request' }, 400);
+	}
+	const { uuid, publicKey, timestamp, signature } = body;
+	if (typeof uuid !== 'string' || !isValidUuid(uuid) ||
+		typeof publicKey !== 'string' || typeof timestamp !== 'number' ||
+		typeof signature !== 'string') {
+		return json({ error: 'Invalid parameters' }, 400);
+	}
+	if (Math.abs(Date.now() - timestamp) > 120000) {
+		return json({ error: 'Timestamp too old' }, 400);
+	}
+
+	const message = `guest-stop:${uuid}:${timestamp}`;
+	if (!await verifyEd25519(publicKey, message, signature)) {
+		return json({ error: 'Invalid signature' }, 401);
+	}
+
+	const found = await findGuestKey(request, env, uuid);
+	if (!found) {
+		return json({ success: true });
+	}
+	if (found.row.pubkey !== publicKey) {
+		return json({ error: 'Public key mismatch for this nickname' }, 401);
+	}
+
+	await dbFor(env, found.node).prepare('DELETE FROM offline_keys WHERE uuid = ?')
+		.bind(uuid).run();
+	return json({ success: true });
+}
+
 async function handleStats(env) {
 	const nodes = [];
 	let total = 0;
@@ -133,42 +184,160 @@ function isAllowedOrigin(origin) {
 	}
 }
 
-async function handleAuth(request, env) {
-	const body = await request.json();
-	const { username, serverId } = body;
+const ACCOUNT_TTL = 604800;
+const PBKDF2_ITERATIONS = 100000;
+const USERNAME_RE = /^[a-zA-Z0-9_]{1,16}$/;
 
-	if (!username || !serverId) {
-		return json({ error: 'username and serverId required' }, 400);
+async function handleAccountRegister(request, env) {
+	const body = await request.json().catch(() => null);
+	if (!body || typeof body !== 'object') {
+		return json({ error: 'Invalid request' }, 400);
 	}
-	if (typeof username !== 'string' || typeof serverId !== 'string') {
-		return json({ error: 'Invalid parameters' }, 400);
-	}
-	if (!serverId.startsWith('jinfo-') || serverId.length < 38) {
-		return json({ error: 'Invalid serverId format' }, 400);
-	}
-	if (!/^[a-zA-Z0-9_]{1,16}$/.test(username)) {
+	const username = typeof body.username === 'string' ? body.username.trim() : '';
+	const password = typeof body.password === 'string' ? body.password : '';
+	if (!USERNAME_RE.test(username)) {
 		return json({ error: 'Invalid username' }, 400);
 	}
-
-	const mojangUrl = `https://sessionserver.mojang.com/session/minecraft/hasJoined?username=${encodeURIComponent(username)}&serverId=${encodeURIComponent(serverId)}`;
-	const mojangRes = await fetch(mojangUrl);
-
-	if (mojangRes.status === 204 || mojangRes.status === 403) {
-		return json({ error: 'Invalid session' }, 401);
-	}
-	if (!mojangRes.ok) {
-		return json({ error: 'Mojang session server error' }, 502);
+	if (password.length < 8 || password.length > 128) {
+		return json({ error: 'Password must be 8-128 characters' }, 400);
 	}
 
-	const mojangData = await mojangRes.json();
-	const uuid = mojangData.id;
-	if (!uuid || !/^[0-9a-f]{32}$/.test(uuid)) {
-		return json({ error: 'Invalid UUID from Mojang' }, 502);
+	const key = username.toLowerCase();
+	const exists = await env.DB_EEUR.prepare(
+		'SELECT 1 FROM accounts WHERE username = ?'
+	).bind(key).first();
+	if (exists) {
+		return json({ error: 'Username already registered' }, 409);
 	}
 
-	const formattedUuid = formatUuid(uuid);
-	const token = await createToken(formattedUuid, env);
-	return json({ token, uuid: formattedUuid });
+	let uuid;
+	try {
+		uuid = await resolvePlayerUuid(username);
+	} catch (e) {
+		return json({ error: 'Could not verify nickname, try again later' }, 502);
+	}
+
+	const uuidTaken = await env.DB_EEUR.prepare(
+		'SELECT 1 FROM accounts WHERE uuid = ?'
+	).bind(uuid).first();
+	if (uuidTaken) {
+		return json({ error: 'This nickname already has an account' }, 409);
+	}
+	if (await findGuestKey(request, env, uuid)) {
+		return json({ error: 'Guest mode is active for this nickname' }, 409);
+	}
+
+	const salt = randomBase64(16);
+	const hash = await derivePassword(password, salt, PBKDF2_ITERATIONS);
+	const now = Math.floor(Date.now() / 1000);
+	try {
+		await env.DB_EEUR.prepare(
+			`INSERT INTO accounts (username, display, uuid, salt, hash, iterations, created, updated)
+			 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+		).bind(key, username, uuid, salt, hash, PBKDF2_ITERATIONS, now, now).run();
+	} catch (e) {
+		return json({ error: 'Username already registered' }, 409);
+	}
+
+	const token = await createToken(uuid, env, ACCOUNT_TTL);
+	return json({ token, uuid, username, verified: true }, 200, { 'Cache-Control': 'no-store' });
+}
+
+async function handleAccountLogin(request, env) {
+	const body = await request.json().catch(() => null);
+	if (!body || typeof body !== 'object') {
+		return json({ error: 'Invalid request' }, 400);
+	}
+	const username = typeof body.username === 'string' ? body.username.trim() : '';
+	const password = typeof body.password === 'string' ? body.password : '';
+	if (!USERNAME_RE.test(username) || password.length < 1 || password.length > 128) {
+		return json({ error: 'Invalid username or password' }, 401);
+	}
+
+	const account = await env.DB_EEUR.prepare(
+		'SELECT username, display, uuid, salt, hash, iterations FROM accounts WHERE username = ?'
+	).bind(username.toLowerCase()).first();
+	if (!account) {
+		return json({ error: 'Invalid username or password' }, 401);
+	}
+
+	const hash = await derivePassword(password, account.salt, Number(account.iterations));
+	if (!timingSafeEqual(hash, account.hash)) {
+		return json({ error: 'Invalid username or password' }, 401);
+	}
+
+	const token = await createToken(account.uuid, env, ACCOUNT_TTL);
+	return json({
+		token,
+		uuid: account.uuid,
+		username: account.display,
+		verified: true
+	}, 200, { 'Cache-Control': 'no-store' });
+}
+
+async function accountFor(env, uuid, username) {
+	return await env.DB_EEUR.prepare(
+		'SELECT username, uuid FROM accounts WHERE uuid = ? OR username = ? LIMIT 1'
+	).bind(uuid, (username || '').toLowerCase()).first();
+}
+
+async function accountUuids(env, uuids) {
+	if (!uuids.length) return new Set();
+	try {
+		const placeholders = uuids.map(() => '?').join(',');
+		const rows = await env.DB_EEUR.prepare(
+			`SELECT uuid FROM accounts WHERE uuid IN (${placeholders})`
+		).bind(...uuids).all();
+		return new Set(rows.results.map(r => r.uuid));
+	} catch (e) {
+		console.error('Account lookup failed:', e);
+		return new Set();
+	}
+}
+
+async function isAccountUuid(env, uuid) {
+	try {
+		const row = await env.DB_EEUR.prepare(
+			'SELECT 1 FROM accounts WHERE uuid = ?'
+		).bind(uuid).first();
+		return Boolean(row);
+	} catch (e) {
+		console.error('Account lookup failed:', e);
+		return false;
+	}
+}
+
+function randomBase64(length) {
+	const bytes = crypto.getRandomValues(new Uint8Array(length));
+	return btoa(String.fromCharCode(...bytes));
+}
+
+async function derivePassword(password, saltB64, iterations) {
+	const salt = base64ToBytes(saltB64);
+	const key = await crypto.subtle.importKey(
+		'raw',
+		new TextEncoder().encode(password),
+		'PBKDF2',
+		false,
+		['deriveBits']
+	);
+	const bits = await crypto.subtle.deriveBits(
+		{ name: 'PBKDF2', hash: 'SHA-256', salt, iterations },
+		key,
+		256
+	);
+	return btoa(String.fromCharCode(...new Uint8Array(bits)));
+}
+
+function timingSafeEqual(a, b) {
+	if (typeof a !== 'string' || typeof b !== 'string' || a.length !== b.length) {
+		return false;
+	}
+	let diff = 0;
+	for (let i = 0; i < a.length; i++) {
+		diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+	}
+	return diff === 0;
 }
 
 async function handleAuthOffline(request, env) {
@@ -191,12 +360,21 @@ async function handleAuthOffline(request, env) {
 		return json({ error: 'Timestamp too old' }, 400);
 	}
 
-	const uuid = await generateOfflineUuid(username);
-	const formattedUuid = formatUuid(uuid);
+	let formattedUuid;
+	try {
+		formattedUuid = await resolvePlayerUuid(username);
+	} catch (e) {
+		return json({ error: 'Could not resolve nickname, try again later' }, 502);
+	}
 
 	const isValid = await verifyEd25519(publicKey, `${username}:${timestamp}`, signature);
 	if (!isValid) {
 		return json({ error: 'Invalid signature' }, 401);
+	}
+
+	const account = await accountFor(env, formattedUuid, username);
+	if (account) {
+		return json({ error: 'Account registered, sign in with password' }, 403);
 	}
 
 	const ordered = orderedNodes(request);
@@ -223,7 +401,7 @@ async function handleAuthOffline(request, env) {
 	}
 
 	const token = await createToken(formattedUuid, env);
-	return json({ token, uuid: formattedUuid });
+	return json({ token, uuid: formattedUuid, username });
 }
 
 async function handleProfilePut(request, env) {
@@ -314,7 +492,7 @@ async function handleProfileGet(uuid, request, env) {
 
 	const row = found.row;
 	const decrypted = await decryptProfile(row.data, env.AES_KEY);
-	const isVerified = isUuidV4(uuid);
+	const isVerified = await isAccountUuid(env, uuid);
 
 	return json({
 		uuid,
@@ -342,6 +520,7 @@ async function handleProfilesBatch(request, env) {
 	}
 
 	const placeholders = validUuids.map(() => '?').join(',');
+	const verifiedSet = await accountUuids(env, validUuids);
 	const profiles = {};
 	for (const node of orderedNodes(request)) {
 		const rows = await dbFor(env, node).prepare(
@@ -350,7 +529,7 @@ async function handleProfilesBatch(request, env) {
 		for (const row of rows.results) {
 			profiles[row.uuid] = {
 				updated: row.updated,
-				verified: isUuidV4(row.uuid)
+				verified: verifiedSet.has(row.uuid)
 			};
 		}
 	}
@@ -418,8 +597,8 @@ async function verifyToken(request, env) {
 	return { uuid };
 }
 
-async function createToken(uuid, env) {
-	const expiry = Math.floor(Date.now() / 1000) + 3600;
+async function createToken(uuid, env, ttl = 3600) {
+	const expiry = Math.floor(Date.now() / 1000) + ttl;
 	const hmac = await hmacSha256(`${uuid}.${expiry}`, env.TOKEN_KEY);
 	return `${uuid}.${expiry}.${hmac}`;
 }
@@ -474,6 +653,57 @@ function base64ToBytes(b64) {
 	return bytes;
 }
 
+async function resolvePlayerUuid(username) {
+	const encoded = encodeURIComponent(username);
+	const endpoints = [
+		`https://api.minecraftservices.com/minecraft/profile/lookup/name/${encoded}`,
+		`https://api.mojang.com/users/profiles/minecraft/${encoded}`
+	];
+	for (const url of endpoints) {
+		try {
+			const res = await fetch(url, {
+				headers: { 'User-Agent': 'JInfo/0.3.2 (profile service)' },
+				signal: AbortSignal.timeout(5000)
+			});
+			if (res.ok) {
+				const data = await res.json();
+				if (data && typeof data.id === 'string' && /^[0-9a-f]{32}$/i.test(data.id)) {
+					return formatUuid(data.id);
+				}
+			}
+			if (res.status === 204 || res.status === 404) {
+				return formatUuid(await generateOfflineUuid(username));
+			}
+		} catch {
+		}
+	}
+
+	try {
+		const res = await fetch(`https://playerdb.co/api/player/minecraft/${encoded}`, {
+			headers: { 'Accept': 'application/json', 'User-Agent': 'JInfo/0.3.2' },
+			signal: AbortSignal.timeout(5000)
+		});
+		if (res.status === 400 || res.status === 404 || res.status === 204) {
+			return formatUuid(await generateOfflineUuid(username));
+		}
+		if (res.ok) {
+			const data = await res.json();
+			const id = data && data.data && data.data.player
+				? (data.data.player.raw_id || data.data.player.id)
+				: null;
+			if (typeof id === 'string') {
+				const hex = id.replace(/-/g, '');
+				if (/^[0-9a-f]{32}$/i.test(hex)) {
+					return formatUuid(hex);
+				}
+			}
+		}
+	} catch {
+	}
+
+	throw new Error('Mojang lookup failed');
+}
+
 async function generateOfflineUuid(username) {
 	const data = `OfflinePlayer:${username}`;
 	const hash = await md5(data);
@@ -493,11 +723,6 @@ function formatUuid(uuid) {
 
 function isValidUuid(uuid) {
 	return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(uuid);
-}
-
-function isUuidV4(uuid) {
-	const parts = uuid.split('-');
-	return parts[2].startsWith('4');
 }
 
 async function encryptProfile(text, aesKey) {
@@ -542,7 +767,7 @@ async function handlePublicProfileGet(uuid, request, env) {
 
 	const row = found.row;
 	const decrypted = await decryptProfile(row.data, env.AES_KEY);
-	const isVerified = isUuidV4(uuid);
+	const isVerified = await isAccountUuid(env, uuid);
 
 	return json({
 		uuid,

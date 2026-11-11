@@ -15,7 +15,6 @@ public final class Messages {
         put("net_error", "Ошибка сети", "Помилка мережі", "Network error");
         put("rate_limited", "Слишком часто, подожди", "Занадто часто, зачекай", "Too many requests, wait");
         put("verified", "Профиль подтверждён", "Профіль підтверджено", "Profile verified");
-        put("unverified", "Профиль (не подтверждён)", "Профіль (не підтверджено)", "Profile (unverified)");
 
         put("open_profile", "Открыть профиль", "Відкрити профіль", "Open profile");
         put("close", "Закрыть", "Закрити", "Close");
@@ -110,6 +109,38 @@ public final class Messages {
         put("nick_continue", "Продолжить", "Продовжити", "Continue");
         put("nick_invalid", "Введите ник (до 16 символов).", "Введіть нік (до 16 символів).",
                 "Enter a nickname (up to 16 characters).");
+        put("account_title", "Аккаунт JInfo", "Акаунт JInfo", "JInfo account");
+        put("account_hint", "Ник и пароль защищают профиль. Пароль не сохраняется на устройстве.",
+                "Нік і пароль захищають профіль. Пароль не зберігається на пристрої.",
+                "Nickname and password protect the profile. The password is not stored on this device.");
+        put("account_user", "Ник", "Нік", "Nickname");
+        put("account_pass", "Пароль (8+ символов)", "Пароль (8+ символів)", "Password (8+ characters)");
+        put("account_login", "Войти", "Увійти", "Sign in");
+        put("account_register", "Создать аккаунт", "Створити акаунт", "Create account");
+        put("account_guest", "Войти как гость", "Увійти як гість", "Continue as guest");
+        put("account_logout", "Выйти из аккаунта", "Вийти з акаунта", "Sign out");
+        put("account_logged", "Вы вошли как ", "Ви увійшли як ", "Signed in as ");
+        put("account_busy", "Подождите...", "Зачекайте...", "Please wait...");
+        put("account_bad_pass", "Пароль должен быть от 8 до 128 символов.",
+                "Пароль має бути від 8 до 128 символів.", "Password must be 8-128 characters.");
+        put("account_registered_guest", "Этот ник зарегистрирован. Войдите с паролем.",
+                "Цей нік зареєстрований. Увійдіть із паролем.",
+                "This nickname is registered. Sign in with the password.");
+        put("account_exists", "Этот ник уже зарегистрирован.", "Цей нік уже зареєстрований.",
+                "This nickname is already registered.");
+        put("account_bad_login", "Неверный ник или пароль.", "Невірний нік або пароль.",
+                "Incorrect nickname or password.");
+        put("account_created", "Аккаунт создан.", "Акаунт створено.", "Account created.");
+        put("account_ok", "Вход выполнен.", "Вхід виконано.", "Signed in.");
+        put("account_guest_mode", "Гостевой режим активен", "Гостьовий режим активний", "Guest mode is active");
+        put("account_guest_hint", "Пока режим включён, этот ник нельзя зарегистрировать другим игрокам.",
+                "Поки режим увімкнено, цей нік не можна зареєструвати іншим гравцям.",
+                "While this mode is on, other players cannot register this nickname.");
+        put("account_disable_guest", "Выключить гостевой режим", "Вимкнути гостьовий режим", "Disable guest mode");
+        put("account_guest_off", "Гостевой режим выключен.", "Гостьовий режим вимкнено.", "Guest mode disabled.");
+        put("account_guest_locked", "Этот ник сейчас в гостевом режиме. Сначала выключите его на устройстве, где он включён.",
+                "Цей нік зараз у гостьовому режимі. Спершу вимкніть його на пристрої, де він увімкнений.",
+                "This nickname is in guest mode. Disable it on the device where it was enabled first.");
         put("preview_opening", "Открываю профиль...", "Відкриваю профіль...", "Opening profile...");
 
         put("skin_title", "Настройки скина", "Налаштування скіна", "Skin settings");
@@ -215,7 +246,6 @@ public final class Messages {
         putBe("net_error", "Памылка сеткі");
         putBe("rate_limited", "Занадта часта, пачакай");
         putBe("verified", "Профіль пацверджаны");
-        putBe("unverified", "Профіль (не пацверджаны)");
 
         putBe("open_profile", "Адкрыць профіль");
         putBe("close", "Закрыць");
@@ -286,6 +316,27 @@ public final class Messages {
         putBe("nick_remember", "Запомніць нік");
         putBe("nick_continue", "Працягнуць");
         putBe("nick_invalid", "Увядзіце нік (да 16 сімвалаў).");
+        putBe("account_title", "Акаўнт JInfo");
+        putBe("account_hint", "Нік і пароль абараняюць профіль. Пароль не захоўваецца на прыладзе.");
+        putBe("account_user", "Нік");
+        putBe("account_pass", "Пароль (8+ сімвалаў)");
+        putBe("account_login", "Увайсці");
+        putBe("account_register", "Стварыць акаўнт");
+        putBe("account_guest", "Увайсці як госць");
+        putBe("account_logout", "Выйсці з акаўнта");
+        putBe("account_logged", "Вы ўвайшлі як ");
+        putBe("account_busy", "Пачакайце...");
+        putBe("account_bad_pass", "Пароль павінен быць ад 8 да 128 сімвалаў.");
+        putBe("account_registered_guest", "Гэты нік зарэгістраваны. Увайдзіце з паролем.");
+        putBe("account_exists", "Гэты нік ужо зарэгістраваны.");
+        putBe("account_bad_login", "Няверны нік або пароль.");
+        putBe("account_created", "Акаўнт створаны.");
+        putBe("account_ok", "Уваход выкананы.");
+        putBe("account_guest_mode", "Гасьцявы рэжым актыўны");
+        putBe("account_guest_hint", "Пакуль рэжым уключаны, гэты нік нельга зарэгістраваць іншым гульцам.");
+        putBe("account_disable_guest", "Выключыць гасьцявы рэжым");
+        putBe("account_guest_off", "Гасьцявы рэжым выключаны.");
+        putBe("account_guest_locked", "Гэты нік зараз у гасьцявым рэжыме. Спачатку выключыце яго на прыладзе, дзе ён уключаны.");
         putBe("preview_opening", "Адкрываю профіль...");
 
         putBe("skin_title", "Налады скіна");

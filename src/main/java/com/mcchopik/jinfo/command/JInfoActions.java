@@ -352,8 +352,9 @@ public final class JInfoActions {
 
     private static void showProfile(FabricClientCommandSource src, ProfileData data) {
         ParsedProfile parsed = PARSER.parse(data.data(), JInfoConfig.language());
-        String marker = data.verified() ? "" : " [не подтверждён]";
-        reply(src, "Статус: " + (data.verified() ? "подтверждён" : "не подтверждён") + marker);
+        if (data.verified()) {
+            reply(src, "Статус: подтверждён");
+        }
         for (String line : parsed.plainText().split("\n", -1)) {
             reply(src, line);
         }
