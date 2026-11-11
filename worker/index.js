@@ -662,7 +662,7 @@ async function resolvePlayerUuid(username) {
 	for (const url of endpoints) {
 		try {
 			const res = await fetch(url, {
-				headers: { 'User-Agent': 'JInfo/0.3.2 (profile service)' },
+				headers: { 'User-Agent': 'JInfo/1.3 (profile service)' },
 				signal: AbortSignal.timeout(5000)
 			});
 			if (res.ok) {
@@ -680,7 +680,7 @@ async function resolvePlayerUuid(username) {
 
 	try {
 		const res = await fetch(`https://playerdb.co/api/player/minecraft/${encoded}`, {
-			headers: { 'Accept': 'application/json', 'User-Agent': 'JInfo/0.3.2' },
+			headers: { 'Accept': 'application/json', 'User-Agent': 'JInfo/1.3' },
 			signal: AbortSignal.timeout(5000)
 		});
 		if (res.status === 400 || res.status === 404 || res.status === 204) {
