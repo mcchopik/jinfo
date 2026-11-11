@@ -3,6 +3,16 @@ main = "index.js"
 compatibility_date = "2026-11-04"
 
 [[d1_databases]]
-binding = "DB"
+binding = "DB_EEUR"
 database_name = "profiles"
 database_id = "aa100ded-4722-400e-9d58-455b8484d405"
+
+[[d1_databases]]
+binding = "DB_WNAM"
+database_name = "profiles-wnam"
+database_id = "7cd0800b-588f-44fa-b64a-e06d7231634a"
+
+[[d1_databases]]
+binding = "DB_APAC"
+database_name = "profiles-apac"
+database_id = "91621fc8-6ace-4bc2-a875-3e609e1b9552"

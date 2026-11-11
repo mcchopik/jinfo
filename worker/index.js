@@ -32,7 +32,10 @@ if (path === '/report' && request.method === 'POST') {
 		}
 		if (path.startsWith('/public/profile/') && request.method === 'GET') {
 			const uuid = path.slice('/public/profile/'.length);
-			return await handlePublicProfileGet(uuid, env);
+			return await handlePublicProfileGet(uuid, request, env);
+		}
+		if (path === '/stats' && request.method === 'GET') {
+			return await handleStats(env);
 		}
 
 		return json({ error: 'Not found' }, 404);
@@ -42,6 +45,68 @@ if (path === '/report' && request.method === 'POST') {
 		}
 	}
 };
+
+const NODES = [
+	{ id: 'eeur', binding: 'DB_EEUR', label: 'Europe', lat: 52.23, lon: 21.01 },
+	{ id: 'wnam', binding: 'DB_WNAM', label: 'North America', lat: 37.34, lon: -121.89 },
+	{ id: 'apac', binding: 'DB_APAC', label: 'Asia Pacific', lat: 1.35, lon: 103.82 }
+];
+
+function dbFor(env, node) {
+	return env[node.binding];
+}
+
+function orderedNodes(request) {
+	const cf = request.cf || {};
+	const lat = Number(cf.latitude);
+	const lon = Number(cf.longitude);
+	if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+		return [...NODES];
+	}
+	return [...NODES].sort((a, b) => distance(lat, lon, a) - distance(lat, lon, b));
+}
+
+function distance(lat, lon, node) {
+	const rad = Math.PI / 180;
+	const dLat = (node.lat - lat) * rad;
+	const dLon = (node.lon - lon) * rad;
+	const a = Math.sin(dLat / 2) ** 2
+		+ Math.cos(lat * rad) * Math.cos(node.lat * rad) * Math.sin(dLon / 2) ** 2;
+	return 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+async function findProfile(request, env, uuid) {
+	for (const node of orderedNodes(request)) {
+		const row = await dbFor(env, node).prepare(
+			'SELECT data, skin, updated FROM profiles WHERE uuid = ?'
+		).bind(uuid).first();
+		if (row) {
+			return { node, row };
+		}
+	}
+	return null;
+}
+
+async function handleStats(env) {
+	const nodes = [];
+	let total = 0;
+	for (const node of NODES) {
+		try {
+			const row = await dbFor(env, node).prepare(
+				'SELECT COUNT(*) AS count FROM profiles'
+			).first();
+			const count = Number(row ? row.count : 0);
+			total += count;
+			nodes.push({ id: node.id, label: node.label, count, ok: true });
+		} catch (e) {
+			nodes.push({ id: node.id, label: node.label, count: 0, ok: false });
+		}
+	}
+	return json({ total, nodes }, 200, {
+		'Access-Control-Allow-Origin': '*',
+		'Cache-Control': 'no-store'
+	});
+}
 
 function handleOptions(request) {
 	const origin = request.headers.get('Origin');
@@ -134,14 +199,27 @@ async function handleAuthOffline(request, env) {
 		return json({ error: 'Invalid signature' }, 401);
 	}
 
-	await env.DB.prepare(
-		'INSERT OR IGNORE INTO offline_keys (uuid, pubkey, created) VALUES (?, ?, ?)'
-	).bind(formattedUuid, publicKey, Math.floor(now / 1000)).run();
-
-	const existing = await env.DB.prepare('SELECT pubkey FROM offline_keys WHERE uuid = ?')
-		.bind(formattedUuid).first();
+	const ordered = orderedNodes(request);
+	let keyNode = null;
+	let existing = null;
+	for (const node of ordered) {
+		const row = await dbFor(env, node).prepare(
+			'SELECT pubkey FROM offline_keys WHERE uuid = ?'
+		).bind(formattedUuid).first();
+		if (row) {
+			keyNode = node;
+			existing = row;
+			break;
+		}
+	}
 	if (existing && existing.pubkey !== publicKey) {
 		return json({ error: 'Public key mismatch for this username' }, 401);
+	}
+	if (!existing) {
+		keyNode = ordered[0];
+		await dbFor(env, keyNode).prepare(
+			'INSERT INTO offline_keys (uuid, pubkey, created) VALUES (?, ?, ?)'
+		).bind(formattedUuid, publicKey, Math.floor(now / 1000)).run();
 	}
 
 	const token = await createToken(formattedUuid, env);
@@ -193,7 +271,9 @@ async function handleProfilePut(request, env) {
 	const encrypted = await encryptProfile(cleaned, env.AES_KEY);
 	const now = Math.floor(Date.now() / 1000);
 
-	const result = await env.DB.prepare(
+	const existingProfile = await findProfile(request, env, auth.uuid);
+	const target = existingProfile ? existingProfile.node : orderedNodes(request)[0];
+	const result = await dbFor(env, target).prepare(
 		`INSERT INTO profiles (uuid, data, skin, updated) VALUES (?, ?, ?, ?)
 		 ON CONFLICT(uuid) DO UPDATE SET data = excluded.data, skin = excluded.skin, updated = excluded.updated
 		 WHERE updated < ?`
@@ -210,7 +290,12 @@ async function handleProfileDelete(request, env) {
 	const auth = await verifyToken(request, env);
 	if (!auth) return json({ error: 'Unauthorized' }, 401);
 
-	await env.DB.prepare('DELETE FROM profiles WHERE uuid = ?').bind(auth.uuid).run();
+	const existing = await findProfile(request, env, auth.uuid);
+	if (!existing) {
+		return json({ error: 'Profile not found' }, 404);
+	}
+	await dbFor(env, existing.node).prepare('DELETE FROM profiles WHERE uuid = ?')
+		.bind(auth.uuid).run();
 	return json({ success: true });
 }
 
@@ -222,13 +307,12 @@ async function handleProfileGet(uuid, request, env) {
 		return json({ error: 'Invalid UUID format' }, 400);
 	}
 
-	const row = await env.DB.prepare('SELECT data, skin, updated FROM profiles WHERE uuid = ?')
-		.bind(uuid).first();
-
-	if (!row) {
+	const found = await findProfile(request, env, uuid);
+	if (!found) {
 		return json({ error: 'Profile not found' }, 404);
 	}
 
+	const row = found.row;
 	const decrypted = await decryptProfile(row.data, env.AES_KEY);
 	const isVerified = isUuidV4(uuid);
 
@@ -258,16 +342,17 @@ async function handleProfilesBatch(request, env) {
 	}
 
 	const placeholders = validUuids.map(() => '?').join(',');
-	const rows = await env.DB.prepare(
-		`SELECT uuid, updated FROM profiles WHERE uuid IN (${placeholders})`
-	).bind(...validUuids).all();
-
 	const profiles = {};
-	for (const row of rows.results) {
-		profiles[row.uuid] = {
-			updated: row.updated,
-			verified: isUuidV4(row.uuid)
-		};
+	for (const node of orderedNodes(request)) {
+		const rows = await dbFor(env, node).prepare(
+			`SELECT uuid, updated FROM profiles WHERE uuid IN (${placeholders})`
+		).bind(...validUuids).all();
+		for (const row of rows.results) {
+			profiles[row.uuid] = {
+				updated: row.updated,
+				verified: isUuidV4(row.uuid)
+			};
+		}
 	}
 
 	return json({ profiles });
@@ -287,10 +372,16 @@ async function handleReport(request, env) {
 		return json({ error: 'Cannot report yourself' }, 400);
 	}
 
+	const found = await findProfile(request, env, profileUuid);
+	if (!found) {
+		return json({ error: 'Profile not found' }, 404);
+	}
+
 	const now = Math.floor(Date.now() / 1000);
 	const dayAgo = now - 86400;
+	const db = dbFor(env, found.node);
 
-	const existing = await env.DB.prepare(
+	const existing = await db.prepare(
 		'SELECT 1 FROM reports WHERE profile_uuid = ? AND reporter_uuid = ? AND time > ?'
 	).bind(profileUuid, auth.uuid, dayAgo).first();
 
@@ -298,7 +389,7 @@ async function handleReport(request, env) {
 		return json({ error: 'Already reported this profile today' }, 429);
 	}
 
-	await env.DB.prepare(
+	await db.prepare(
 		'INSERT INTO reports (profile_uuid, reporter_uuid, time) VALUES (?, ?, ?)'
 	).bind(profileUuid, auth.uuid, now).run();
 
@@ -439,18 +530,17 @@ function sanitizeProfileText(text) {
 		.replace(/(.)\1{4,}/g, '$1$1$1$1');
 }
 
-async function handlePublicProfileGet(uuid, env) {
+async function handlePublicProfileGet(uuid, request, env) {
 	if (!isValidUuid(uuid)) {
 		return json({ error: 'Invalid UUID format' }, 400);
 	}
 
-	const row = await env.DB.prepare('SELECT data, skin, updated FROM profiles WHERE uuid = ?')
-		.bind(uuid).first();
-
-	if (!row) {
+	const found = await findProfile(request, env, uuid);
+	if (!found) {
 		return json({ error: 'Profile not found' }, 404);
 	}
 
+	const row = found.row;
 	const decrypted = await decryptProfile(row.data, env.AES_KEY);
 	const isVerified = isUuidV4(uuid);
 
@@ -463,9 +553,9 @@ async function handlePublicProfileGet(uuid, env) {
 	});
 }
 
-function json(data, status = 200) {
+function json(data, status = 200, extraHeaders = {}) {
 	return new Response(JSON.stringify(data), {
 		status,
-		headers: { 'Content-Type': 'application/json' }
+		headers: { 'Content-Type': 'application/json', ...extraHeaders }
 	});
 }
