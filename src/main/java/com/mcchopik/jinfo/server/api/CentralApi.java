@@ -30,7 +30,7 @@ public final class CentralApi {
             }
             HttpRequest request = HttpRequest.newBuilder(URI.create(base + "/public/profile/" + uuid))
                     .timeout(TIMEOUT)
-                    .header("User-Agent", "jinfo-server/0.3.0")
+                    .header("User-Agent", "jinfo-server/1.3")
                     .header("Accept", "application/json")
                     .GET()
                     .build();

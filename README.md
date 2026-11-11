@@ -11,7 +11,7 @@ Fabric server mod for Minecraft 26.2. It provides JInfo profiles through chat co
 
 ## Install
 
-1. Put Fabric API and `JInfo-Server-Fabric-0.3.0.jar` into `mods/`.
+1. Put Fabric API and `JInfo-Server-Fabric-1.3.jar` into `mods/`.
 2. Start the server. `jinfo-server.json` is created automatically.
 3. Edit `centralApiBase` or `profilesDir` if needed.
 4. Restart the server.
